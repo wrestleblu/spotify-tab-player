@@ -1,0 +1,2195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="color-scheme" content="dark light"/>
+<link rel="icon" href="data:,"/>
+<title>Spotify Tab Player</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#101210; --bg2:#171917; --panel:#1c1f1c; --panel2:#232723; --line:#2e332e;
+  --text:#f2f3ef; --muted:#a8ada5; --faint:#767c74;
+  --green:#1ed760; --green-d:#17b14e; --amber:#e9b44c; --red:#ff6b5e;
+  --radius:14px;
+  --tab-size:14.5px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:"DM Sans",system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;overflow:hidden}
+button{font-family:inherit;cursor:pointer;min-height:40px}
+a{color:var(--green)}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:#3a403a;border-radius:8px}::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- Top bar ---------- */
+.topbar{display:flex;align-items:center;gap:14px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--line);flex-wrap:wrap;z-index:5}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:17px;letter-spacing:-.02em;white-space:nowrap}
+.brand .dot{width:30px;height:30px;border-radius:50%;background:var(--green);display:grid;place-items:center;color:#0b120c;font-size:16px}
+.brand small{display:block;font-weight:500;font-size:11px;color:var(--muted);letter-spacing:.02em}
+.seg{display:flex;background:#0c0e0c;border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;color:var(--muted);border-radius:999px;padding:7px 16px;font-weight:700;font-size:13.5px;min-height:36px}
+.seg button.on{background:var(--green);color:#08130a}
+.pills{display:flex;gap:6px}
+.pills button{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:6px 13px;font-weight:700;font-size:13px;min-height:36px}
+.pills button.on{background:var(--amber);border-color:var(--amber);color:#1a1503}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.demo-badge{font-size:12px;font-weight:700;color:#1a1503;background:var(--amber);border-radius:999px;padding:5px 11px}
+.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:999px;padding:8px 16px;font-weight:700;font-size:13.5px}
+.btn.green{background:var(--green);border-color:var(--green);color:#08130a}
+.btn.green:hover{background:var(--green-d)}
+
+/* ---------- Layout ---------- */
+.layout{flex:1;display:grid;grid-template-columns:348px 1fr;min-height:0}
+.sidebar{border-right:1px solid var(--line);background:var(--bg2);display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.side-scroll{overflow-y:auto;padding:14px}
+.side-scroll h3{margin:16px 0 8px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.side-scroll h3:first-child{margin-top:2px}
+.search{width:100%;background:#0c0e0c;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px 13px;font-size:14px;font-family:inherit;min-height:44px}
+.search::placeholder{color:var(--faint)}
+.search-status{display:none;margin-top:10px;padding:11px 13px;border:1px solid var(--red);border-radius:10px;background:var(--panel);color:var(--text);font-size:13px;line-height:1.55}
+.search-status.show{display:block}
+.search-status b{color:var(--red)}
+.search-status .keep{color:var(--muted)}
+.type-seg{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 2px}
+.type-seg button{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:6px 13px;font-weight:700;font-size:13px;min-height:34px}
+.type-seg button.on{background:var(--green);border-color:var(--green);color:#08130a}
+.browse-ctx{display:none;margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);font-size:13px;line-height:1.5;color:var(--muted)}
+.browse-ctx.show{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.browse-ctx b{color:var(--text)}
+.browse-ctx button{flex:none;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:999px;padding:5px 11px;font-weight:700;font-size:12.5px;min-height:32px}
+.result-row{display:flex;gap:12px;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:12px;padding:9px;align-items:center;color:var(--text)}
+.result-row:hover{background:var(--panel)}
+.result-row .cover{border-radius:8px}
+.result-row.artist .cover{border-radius:50%}
+.result-row b{display:block;font-size:14.5px;line-height:1.2}
+.result-row span{font-size:12.5px;color:var(--muted)}
+.result-row .go{margin-left:auto;flex:none;color:var(--faint);font-size:18px}
+.result-wrap{display:flex;align-items:center;gap:4px}
+.result-wrap .result-row,.result-wrap .album{flex:1;min-width:0}
+.track-row{display:flex;align-items:center;gap:4px}
+.track-row .track{flex:1;min-width:0}
+.add-btn{flex:none;width:36px;height:36px;min-height:36px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);color:var(--green);font-size:19px;font-weight:900;display:grid;place-items:center;padding:0}
+.add-btn:active{transform:scale(.94)}
+.list-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 0 8px;font-size:12.5px;color:var(--muted)}
+.list-actions button,.sctl button{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:999px;padding:5px 11px;font-weight:700;font-size:12.5px;min-height:32px}
+.session-item{display:flex;gap:8px;align-items:center;padding:8px 9px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;background:var(--panel)}
+.session-item .n{width:20px;text-align:center;color:var(--faint);font-size:12.5px;font-family:"IBM Plex Mono",monospace;flex:none}
+.session-item b{display:block;font-size:13.5px;line-height:1.25}
+.session-item span{font-size:12px;color:var(--muted)}
+.session-item .dur{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--faint);flex:none}
+.sctl{display:flex;gap:4px;flex:none}
+.sctl button{width:30px;height:30px;min-height:30px;padding:0;border-radius:8px;display:grid;place-items:center;font-size:13px}
+.session-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.session-actions .btn{flex:1;white-space:nowrap}
+.session-note{font-size:12.5px;color:var(--muted);line-height:1.55;margin:10px 0 0}
+.session-note code{font-family:"IBM Plex Mono",monospace;font-size:11.5px;background:#0c0e0c;padding:1px 5px;border-radius:5px;color:var(--amber)}
+.session-status{display:none;margin-top:10px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);font-size:13px;line-height:1.55}
+.session-status.show{display:block}
+.session-status.err{border-color:var(--red)}
+.session-status.err b{color:var(--red)}
+.session-status.ok{border-color:var(--green)}
+.session-status.ok b{color:var(--green)}
+.album{display:flex;gap:12px;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:12px;padding:9px;align-items:center;color:var(--text)}
+.album:hover{background:var(--panel)}
+.album.on{background:var(--panel);border-color:var(--line)}
+.cover{width:52px;height:52px;border-radius:8px;flex:none;display:grid;place-items:center;font-weight:900;font-size:15px;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.5);letter-spacing:-.02em}
+.album b{display:block;font-size:14.5px;line-height:1.2}
+.album span{font-size:12.5px;color:var(--muted)}
+.track{display:flex;gap:10px;width:100%;text-align:left;background:transparent;border:0;border-radius:10px;padding:9px 10px;color:var(--text);align-items:center}
+.track:hover{background:var(--panel)}
+.track.on{background:var(--panel2)}
+.track .n{width:22px;text-align:center;color:var(--faint);font-size:12.5px;font-family:"IBM Plex Mono",monospace;flex:none}
+.track.on .n{color:var(--green)}
+.track b{font-size:14px;font-weight:600;display:block;line-height:1.25}
+.track span{font-size:12px;color:var(--muted)}
+.track .dur{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--faint);flex:none}
+.eq{display:none;gap:2px;align-items:flex-end;height:12px}
+.track.on.playing .eq{display:flex}
+.track.on.playing .n{display:none}
+.eq i{width:3px;background:var(--green);animation:eq 0.7s ease-in-out infinite alternate}
+.eq i:nth-child(2){animation-delay:.2s}.eq i:nth-child(3){animation-delay:.45s}
+@keyframes eq{from{height:4px}to{height:12px}}
+.howto{margin:14px;padding:13px 14px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);font-size:13px;line-height:1.55;color:var(--muted)}
+.howto b{color:var(--text)}
+.howto ol{margin:6px 0 0;padding-left:18px}
+.howto code{font-family:"IBM Plex Mono",monospace;font-size:12px;background:#0c0e0c;padding:1px 5px;border-radius:5px;color:var(--amber)}
+
+/* ---------- Main / tab pane ---------- */
+.main{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg)}
+.now{padding:16px 22px 10px;display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+.now .cover{width:74px;height:74px;font-size:21px;border-radius:10px}
+.now h1{margin:0;font-size:clamp(22px,3.4vw,34px);font-weight:900;letter-spacing:-.03em;line-height:1.05}
+.now .artist{color:var(--muted);font-size:15px;margin-top:3px}
+.badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.badge{font-size:12px;font-weight:700;border:1px solid var(--line);border-radius:999px;padding:4px 10px;color:var(--muted);background:var(--panel)}
+.badge.src{color:#0b120c;background:var(--green);border-color:var(--green)}
+.badge.alt{color:var(--amber);border-color:#5a4a1e}
+.next-up{margin-left:auto;text-align:right;font-size:13px;color:var(--muted);max-width:230px}
+.next-up b{color:var(--text);display:block;font-size:14px}
+.tabbar{display:flex;align-items:center;gap:8px;padding:8px 22px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg2);flex-wrap:wrap}
+.tabbar .lbl{font-size:12px;color:var(--faint);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-right:2px}
+.tabbar button.chip{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:8px;padding:6px 12px;font-weight:700;font-size:13px;min-height:36px}
+.tabbar button.chip.on{background:var(--green);color:#08130a;border-color:var(--green)}
+.tabbar .sp{flex:1}
+.tabbar a.open{font-size:13px;font-weight:700;text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:8px 12px;color:var(--text);background:var(--panel);display:inline-flex;align-items:center;min-height:36px}
+.switch{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;padding:6px 2px;min-height:36px}
+.switch input{width:20px;height:20px;accent-color:var(--green)}
+.tabscroll{flex:1;overflow-y:auto;padding:20px 22px 30px;scroll-behavior:auto}
+.tabcard{max-width:880px;margin:0 auto;background:#f7f4ec;color:#1c1a14;border-radius:10px;padding:26px 30px 34px;box-shadow:0 18px 50px rgba(0,0,0,.45)}
+.tabcard .t-head{border-bottom:2px solid #1c1a14;padding-bottom:12px;margin-bottom:16px}
+.tabcard .t-head b{font-size:19px;letter-spacing:-.01em}
+.tabcard .t-head span{display:block;color:#6b6552;font-size:13px;margin-top:2px}
+.tabcard pre{font-family:"IBM Plex Mono",monospace;font-size:var(--tab-size);line-height:1.65;margin:0;white-space:pre;overflow-x:auto;color:#23201a}
+.tabcard .sect{font-family:"DM Sans",sans-serif;font-weight:900;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#8a5a12;margin:20px 0 6px}
+.tabcard .sect:first-of-type{margin-top:4px}
+.tabnote{max-width:880px;margin:14px auto 0;font-size:12.5px;color:var(--faint);line-height:1.5;text-align:center}
+.ss-frame-wrap{margin:6px 0 12px;border-radius:10px;overflow:hidden;background:#101010;border:1px solid #d8d2c0}
+.ss-frame{display:block;width:100%;height:min(74vh,780px);border:0;background:#fff}
+body.phone .ss-frame{height:64vh}
+body.couch .ss-frame{height:76vh}
+.ss-msg{font-family:"DM Sans",sans-serif;font-size:14.5px;line-height:1.6;color:#4c4738;margin:4px 0 10px}
+body.couch .ss-msg{color:#c9c4b2}
+.ss-open{display:inline-block;background:#1c1a14;color:#f7f4ec;font-weight:700;font-size:15px;text-decoration:none;border-radius:10px;padding:13px 20px}
+button.ss-open{border:0;cursor:pointer;font-family:inherit}
+.ss-open.alt{background:transparent;color:#1c1a14;border:2px solid #1c1a14}
+body.couch .ss-open.alt{color:#f5f2e8;border-color:#f5f2e8}
+.mt-status{display:none;margin-top:10px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);font-size:13px;line-height:1.55}
+.mt-status.show{display:block}
+.mt-status.err{border-color:var(--red)} .mt-status.err b{color:var(--red)}
+.mt-status.ok{border-color:var(--green)} .mt-status.ok b{color:var(--green)}
+.mt-note{font-size:12.5px;color:var(--muted);line-height:1.55;margin:8px 0 0}
+.mt-note code{font-family:"IBM Plex Mono",monospace;font-size:11.5px;background:#0c0e0c;padding:1px 5px;border-radius:5px;color:var(--amber)}
+.mt-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.mt-actions .btn{flex:1;white-space:nowrap}
+.mt-file{font-size:12.5px;color:var(--muted);padding:5px 0;border-bottom:1px dashed var(--line)}
+.mt-file b{color:var(--text);font-size:13px}
+.at-sheet{background:#fdfcf7;border-radius:8px;padding:14px 10px;overflow-x:auto;min-height:220px}
+.at-sheet .ss-msg{color:#4c4738}
+
+/* ---------- Player ---------- */
+.player{border-top:1px solid var(--line);background:var(--bg2);padding:12px 22px 14px}
+.progress-row{display:flex;align-items:center;gap:12px;font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--muted)}
+.progress{flex:1;height:8px;background:#0c0e0c;border-radius:99px;overflow:hidden;cursor:pointer}
+.progress i{display:block;height:100%;background:var(--green);width:0%;border-radius:99px;transition:width .25s linear}
+.controls{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:10px}
+.cbtn{width:52px;height:52px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:19px;display:grid;place-items:center}
+.cbtn.play{width:64px;height:64px;background:var(--green);border-color:var(--green);color:#08130a;font-size:24px}
+.cbtn:active{transform:scale(.96)}
+.ctl-side{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+input[type=range]{accent-color:var(--green);width:110px;min-height:36px}
+
+/* ---------- Couch mode ---------- */
+body.couch{--tab-size:21px}
+body.couch .sidebar,body.couch .howto,body.couch .next-up .lbl2{display:none}
+body.couch .layout{grid-template-columns:1fr}
+body.couch .topbar{padding:8px 14px}
+body.couch .brand small{display:none}
+body.couch .now{padding:12px 26px 6px}
+body.couch .now h1{font-size:clamp(30px,5vw,52px)}
+body.couch .now .artist{font-size:20px}
+body.couch .now .cover{width:92px;height:92px}
+body.couch .tabcard{max-width:1100px;background:#0c0e0c;color:#f5f2e8;border:1px solid #2c2c2c;box-shadow:none}
+body.couch .tabcard pre{color:#f5f2e8}
+body.couch .tabcard .t-head{border-color:#3a3a3a}
+body.couch .tabcard .t-head span{color:#9a9587}
+body.couch .tabcard .sect{color:var(--amber)}
+body.couch .progress{height:14px}
+body.couch .cbtn{width:76px;height:76px;font-size:26px}
+body.couch .cbtn.play{width:96px;height:96px;font-size:34px}
+body.couch .controls{gap:22px;margin-top:14px}
+body.couch .progress-row{font-size:16px}
+body.couch .tabscroll{padding:14px 18px 24px}
+
+/* ---------- Phone mode ---------- */
+body.phone{--tab-size:16px}
+body.phone .layout{grid-template-columns:1fr;display:flex;flex-direction:column}
+body.phone .sidebar{display:none;border-right:0;border-bottom:1px solid var(--line)}
+body.phone.show-library .sidebar{display:flex;flex:0 0 auto;max-height:48vh}
+body.phone .howto{display:none}
+body.phone .main{flex:1;min-height:0}
+body.phone .now{order:0;padding:10px 14px 8px;gap:12px;flex-wrap:nowrap;align-items:center}
+body.phone .now .cover{width:48px;height:48px;font-size:15px;border-radius:8px}
+body.phone .now h1{font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:62vw}
+body.phone .now .artist{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:62vw}
+body.phone .badges{margin-top:5px}
+body.phone .badge{font-size:11px;padding:3px 8px}
+body.phone #lookupBadge,body.phone .next-up{display:none}
+body.phone .player{order:1;border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-top-color:var(--line);padding:10px 14px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));position:sticky;top:0;z-index:4;box-shadow:0 10px 24px rgba(0,0,0,.28)}
+body.phone .tabbar{order:2;padding:8px 14px}
+body.phone .tabbar .lbl{display:none}
+body.phone .tabscroll{order:3;padding:12px 10px calc(30px + env(safe-area-inset-bottom,0px) + 56px)}
+body.phone .tabcard{padding:16px 14px 22px;max-width:100%}
+body.phone .tabnote{display:none}
+body.phone .cbtn{width:56px;height:56px;font-size:20px}
+body.phone .cbtn.play{width:70px;height:70px;font-size:26px}
+body.phone .controls{gap:14px;margin-top:8px}
+body.phone .ctl-side.speed{display:none}
+body.phone .topbar{gap:8px;padding:8px 10px}
+body.phone .brand small{display:none}
+body.phone .brand{font-size:15px}
+body.phone .brand .dot{width:26px;height:26px;font-size:13px}
+body.phone .wake{display:none}
+.library-toggle{display:none}
+body.phone .library-toggle{display:inline-flex;align-items:center;gap:6px}
+body.phone .toast{bottom:auto;top:76px;transform:translateX(-50%) translateY(-8px)}
+body.phone .toast.show{transform:translateX(-50%) translateY(0)}
+.wake{font-size:12px;font-weight:700;color:var(--green)}
+.wake.off{color:var(--faint)}
+
+/* ---------- Modal ---------- */
+.overlay{position:fixed;inset:0;background:rgba(5,6,5,.72);display:none;place-items:center;padding:18px;z-index:50}
+.overlay.open{display:grid}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:18px;max-width:520px;width:100%;padding:26px;max-height:88vh;overflow-y:auto}
+.modal h2{margin:0 0 6px;font-size:21px;letter-spacing:-.02em}
+.modal p{color:var(--muted);font-size:14px;line-height:1.6}
+.modal ol{color:var(--muted);font-size:14px;line-height:1.7;padding-left:20px}
+.modal code{font-family:"IBM Plex Mono",monospace;font-size:12px;background:#0c0e0c;padding:2px 6px;border-radius:5px;color:var(--amber);word-break:break-all}
+.modal input{width:100%;background:#0c0e0c;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:12px;font-size:14px;font-family:"IBM Plex Mono",monospace;min-height:46px;margin:6px 0 12px}
+.modal .row{display:flex;gap:10px;flex-wrap:wrap}
+
+.toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%) translateY(20px);background:var(--text);color:#111;font-weight:700;font-size:14px;border-radius:999px;padding:11px 20px;opacity:0;pointer-events:none;transition:.25s;z-index:60;max-width:92vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .sidebar{border-right:0;border-bottom:1px solid var(--line);max-height:24vh;min-height:0}
+  .main{min-height:0}
+  .tabscroll{min-height:0}
+  .howto{display:none}
+  .topbar{gap:8px;padding:8px 10px}
+  .brand{font-size:15px}
+  .brand small{display:none}
+  .brand .dot{width:24px;height:24px;font-size:13px}
+  .wake{display:none}
+  .demo-badge{font-size:10.5px;padding:4px 8px}
+  .top-right{margin-left:0;gap:6px}
+  .topbar .btn{padding:6px 12px;font-size:12.5px}
+  .seg button{padding:5px 11px;font-size:12.5px;min-height:32px}
+  .pills button{padding:5px 10px;font-size:12px;min-height:32px}
+  .now{gap:12px}
+  .now .cover{width:46px;height:46px;font-size:14px}
+  .now h1{font-size:21px}
+  .now .artist{font-size:13px}
+  .badges{margin-top:6px}
+  .badge{font-size:11px;padding:3px 8px}
+  #lookupBadge{display:none}
+  .tabnote{display:none}
+  .tabbar{gap:6px}
+  .tabbar .lbl{display:none}
+  .controls{gap:10px;margin-top:6px}
+  .cbtn{width:44px;height:44px;font-size:16px}
+  .cbtn.play{width:54px;height:54px;font-size:20px}
+  body.couch .sidebar{display:none}
+  .now{padding:12px 14px 8px}.tabbar{padding:8px 14px}.tabscroll{padding:14px 12px 22px}
+  .tabcard{padding:18px 16px 24px}
+  .player{padding:10px 14px calc(14px + env(safe-area-inset-bottom,0px) + 64px)}
+  body.phone .player{padding:10px 14px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+  .next-up{display:none}
+  .ctl-side.speed{display:none}
+}
+@media (prefers-color-scheme:light){
+  :root{--bg:#f2f1ec;--bg2:#e9e7df;--panel:#fff;--panel2:#f4f2ea;--line:#d8d4c6;--text:#191a17;--muted:#5c6058;--faint:#8a8d84}
+  .seg,.search,.modal input,.howto code,.progress{background:#fff}
+  .tabcard{box-shadow:0 10px 30px rgba(60,55,30,.15)}
+  body.couch .tabcard{background:#101210}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><span class="dot">♫</span><span>Tab Player<small>Spotify playback · tabs follow the track</small></span></div>
+
+  <div class="seg" role="group" aria-label="Display mode">
+    <button id="modeDesk" class="on" onclick="setMode('desk')">🖥 Desk</button>
+    <button id="modePhone" onclick="setMode('phone')">📱 Phone</button>
+    <button id="modeCouch" onclick="setMode('couch')">🛋 Couch / TV</button>
+  </div>
+
+  <button class="btn library-toggle" id="libraryToggle" onclick="toggleLibrary()" aria-expanded="false" aria-controls="librarySidebar">☰ Browse &amp; tracks</button>
+
+  <div class="pills" role="group" aria-label="Instrument">
+    <button data-inst="Bass" class="on" onclick="setInst(this)">Bass</button>
+    <button data-inst="Guitar" onclick="setInst(this)">Guitar</button>
+    <button data-inst="Chords" onclick="setInst(this)">Chords</button>
+    <button data-inst="Drums" onclick="setInst(this)">Drums</button>
+  </div>
+
+  <div class="top-right">
+    <span class="wake off" id="wakeStatus">Screen awake: off</span>
+    <span class="demo-badge" id="modeBadge">DEMO MODE</span>
+    <button class="btn green" id="connectBtn" onclick="openConnect()">Connect Spotify</button>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="librarySidebar">
+    <div class="side-scroll">
+      <h3 id="browseTitle">Albums — tap one, press play</h3>
+      <input class="search" id="albumSearch" type="search" placeholder="Search albums…" oninput="onAlbumSearchInput()"/>
+      <div class="type-seg" role="group" aria-label="Search by type">
+        <button type="button" data-stype="album" class="on" onclick="setSearchType('album')">Albums</button>
+        <button type="button" data-stype="artist" onclick="setSearchType('artist')">Artists</button>
+        <button type="button" data-stype="track" onclick="setSearchType('track')">Tracks</button>
+        <button type="button" data-stype="playlist" onclick="setSearchType('playlist')">Playlists</button>
+      </div>
+      <div class="browse-ctx" id="browseContext"></div>
+      <div class="search-status" id="searchStatus" role="alert"></div>
+      <div id="albumList" style="margin-top:8px"></div>
+
+      <h3 id="tracklistTitle">Tracklist</h3>
+      <div id="trackList"></div>
+
+      <h3>New playlist — build a session</h3>
+      <div id="sessionPanel"></div>
+
+      <h3>My Tabs — downloaded tab library</h3>
+      <div id="myTabsPanel"></div>
+    </div>
+    <div class="howto">
+      <b>How the real hookup works</b>
+      <ol>
+        <li>Your Spotify app is created — Client ID is already saved in this page</li>
+        <li>Tap <b>Connect Spotify</b> → <b>Log in with Spotify</b> (Premium account)</li>
+        <li>Play here — track changes auto-load the next tab</li>
+      </ol>
+      <p style="margin:8px 0 0">Until you log in, this runs in demo mode with a simulated player, so you can feel the flow. Demo albums carry short preview excerpts; for live Spotify tracks the full tab loads right in the app from Songsterr. Ultimate Guitar can't be embedded in other apps, so it stays an open-externally option.</p>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <section class="main">
+    <div class="now">
+      <div class="cover" id="nowCover">RM</div>
+      <div>
+        <h1 id="nowTitle">—</h1>
+        <div class="artist" id="nowArtist">—</div>
+        <div class="badges">
+          <span class="badge src" id="srcBadge">Songsterr · Bass Tab</span>
+          <span class="badge" id="ratingBadge">Demo preview excerpt</span>
+          <span class="badge alt" id="lookupBadge">Auto-loaded on track change</span>
+        </div>
+      </div>
+      <div class="next-up"><span class="lbl2" style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)">Up next</span><b id="nextTitle">—</b><span id="nextArtist">—</span></div>
+    </div>
+
+    <div class="tabbar">
+      <span class="lbl">Tab source</span>
+      <button class="chip" id="chipMT" onclick="setSource('mt')">My Tabs (downloaded)</button>
+      <button class="chip on" id="chipSS" onclick="setSource('ss')">Songsterr (in-app)</button>
+      <button class="chip" id="chipUG" onclick="setSource('ug')">Ultimate Guitar (external)</button>
+      <span class="sp"></span>
+      <label class="switch"><input type="checkbox" id="autoScroll" checked onchange="toast(this.checked?'Auto-scroll on — tab follows playback':'Auto-scroll off')"/> Auto-scroll</label>
+      <label class="switch">Size
+        <input type="range" min="12" max="26" value="15" step="1" oninput="setTabSize(this.value)" aria-label="Tab text size"/>
+      </label>
+      <a class="open" id="openTabLink" href="#" target="_blank" rel="noopener">Open full tab ↗</a>
+    </div>
+
+    <div class="tabscroll" id="tabScroll">
+      <div class="tabcard">
+        <div class="t-head"><b id="tabHeadTitle">—</b><span id="tabHeadMeta">—</span></div>
+        <div id="tabBody"></div>
+      </div>
+      <p class="tabnote">Tab priority per song: a downloaded tab from your private My Tabs repo renders first when one matches; otherwise the Songsterr tab loads in-app — matched automatically by artist + title whenever the track changes, and the Songsterr player scrolls itself as it plays. Demo albums show short built-in preview excerpts. Ultimate Guitar tabs can't be embedded in other apps, so UG remains an “Open full tab” link out.</p>
+    </div>
+
+    <div class="player">
+      <div class="progress-row">
+        <span id="tCur">0:00</span>
+        <div class="progress" id="progressBar" role="slider" aria-label="Seek" tabindex="0"><i id="progressFill"></i></div>
+        <span id="tDur">0:00</span>
+      </div>
+      <div class="controls">
+        <div class="ctl-side speed">Scroll speed <input type="range" id="speed" min="50" max="180" value="100" aria-label="Scroll speed percent"/></div>
+        <button class="cbtn" onclick="prevTrack()" aria-label="Previous track">⏮</button>
+        <button class="cbtn play" id="playBtn" onclick="togglePlay()" aria-label="Play or pause">▶</button>
+        <button class="cbtn" onclick="nextTrack(true)" aria-label="Next track">⏭</button>
+        <div class="ctl-side"><button class="btn" id="restartBtn" onclick="restartTrack()">↺ Restart</button></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Connect modal -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeConnect()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <h2 id="mTitle">Connect your Spotify</h2>
+    <p id="connectStatus">Your Client ID is saved in this page. Log in with your <b style="color:var(--text)">Spotify Premium</b> account and this page becomes a Spotify Connect device named <b style="color:var(--text)">“Tab Player”</b> — press play here, or pick “Tab Player” in Spotify on your phone/computer.</p>
+    <p style="margin-bottom:4px"><b style="color:var(--text)">Redirect URI registered in your Spotify app</b> — it must match this page's address exactly (this is the address you added in the Spotify dashboard):</p>
+    <div style="margin:6px 0 4px">
+      <code id="redirectUriBox" style="display:flex;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#0c0e0c;font-size:12px;word-break:break-all;user-select:all">computing…</code>
+    </div>
+    <p style="margin-top:2px;font-size:12.5px">Tap / long-press the address to select and copy it if you need it for the Spotify dashboard.</p>
+    <p style="margin-top:4px">If login fails with <code>redirect_uri_mismatch</code>, the URI in your Spotify app (developer.spotify.com/dashboard → your app → Settings) differs from the one above by even one character — update it to match exactly, save, and try again. APIs enabled on the app: <b style="color:var(--text)">Web API</b> and <b style="color:var(--text)">Web Playback SDK</b>.</p>
+    <p>Scopes requested at login: <code>streaming</code>, <code>user-read-playback-state</code>, <code>user-modify-playback-state</code>, <code>user-read-email</code>, <code>user-read-private</code>, <code>playlist-modify-private</code> (the last one is what lets “Save to Spotify” create a private playlist in your account). Login uses Spotify's PKCE flow — no Client Secret is needed or stored. Your access token is kept in this tab's session only and is gone when the tab closes.</p>
+    <p><b style="color:var(--text)">Already connected before playlist saving was added?</b> Your existing login doesn't have the new <code>playlist-modify-private</code> permission yet — use <b style="color:var(--text)">Disconnect</b> below, then <b style="color:var(--text)">Log in with Spotify</b> again, and Spotify will grant it. Browsing and playback work either way; only saving a playlist needs the fresh login.</p>
+    <label style="font-size:13px;font-weight:700">Spotify Client ID (already saved — editable if you ever switch apps)</label>
+    <input id="clientId" value="bc97def315cc484789d0389cff969ebf" autocomplete="off" spellcheck="false"/>
+    <div class="row">
+      <button class="btn green" id="loginBtn" onclick="startSpotifyLogin()">Log in with Spotify</button>
+      <button class="btn" id="logoutBtn" onclick="spotifyLogout()" style="display:none">Disconnect</button>
+      <button class="btn" onclick="closeConnect()">Close</button>
+    </div>
+    <p id="connectMsg" style="margin-bottom:0"></p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://sdk.scdn.co/spotify-player.js"></script>
+<script>
+/* ================= DATA ================= */
+var ALBUMS = [
+ {title:"Rumours", artist:"Fleetwood Mac", year:1977, hue:"#8a5a2b", init:"RM", tracks:[
+   {t:"Dreams", d:254, key:"F major · 120 BPM", tab:[["Verse — bass enters on 2", "G|----------------|----------------|","D|----------------|----------------|","A|----------------|---------3--5---|","E|-1---1---1---1--|-1---1----------|"],["Chorus — “Thunder only happens…”","G|----------------|----------------|","D|----------------|----------------|","A|----------------|-3---3---5---5--|","E|-1---1---1---1--|----------------|"]]},
+   {t:"Don't Stop", d:191, key:"E major · 119 BPM", tab:[["Intro / Verse","G|----------------|----------------|","D|----------------|----------------|","A|----------------|-7---7---7---7--|","E|-0---0---0---0--|----------------|"],["Chorus","G|----------------|----------------|","D|----------------|----------------|","A|-7---7----------|----------------|","E|---------5---5--|-7---7---7---7--|"]]},
+   {t:"Go Your Own Way", d:278, key:"F major · 136 BPM", tab:[["Verse — driving eighths","G|----------------|----------------|","D|----------------|----------------|","A|----------------|-1-1-1-1-3-3-3-3|","E|-1-1-1-1-1-1-1-1|----------------|"],["Chorus","G|----------------|----------------|","D|----------------|----------------|","A|-5-5-5-5-5-5-5-5|-3-3-3-3--------|","E|----------------|---------1-1-1-1|"]]},
+   {t:"The Chain", d:270, key:"E minor · 152 BPM", tab:[["Iconic bass break","G|----------------|----------------|","D|----------------|----------------|","A|----------------|----------------|","E|-0-------3------|-5------3---0---|"],["Outro build","G|----------------|----------------|","D|----------------|----------------|","A|-----5-------5--|-----5-------7--|","E|-0-------0------|-0-------0------|"]]}
+ ]},
+ {title:"Californication", artist:"Red Hot Chili Peppers", year:1999, hue:"#9c3226", init:"CA", tracks:[
+   {t:"Around the World", d:238, key:"E minor · 119 BPM", tab:[["Intro — Flea, full throttle","G|-----9-------9--|-----9----------|","D|-------9-7------|-------9-7------|","A|-7--------------|-7-----------5--|","E|----------------|-----------7----|"],["Verse groove","G|----------------|----------------|","D|----------------|----------------|","A|-7-7---7-7------|-5-5---5-5------|","E|-----0-----0----|-----0-----0----|"]]},
+   {t:"Scar Tissue", d:217, key:"F major · 90 BPM", tab:[["Verse","G|----------------|----------------|","D|----------------|----------------|","A|----------------|-5---5---5---5--|","E|-1---1---1---1--|----------------|"],["Chorus","G|----------------|----------------|","D|----------------|----------------|","A|-3---3---3---3--|-5---5---5---5--|","E|----------------|----------------|"]]},
+   {t:"Otherside", d:255, key:"A minor · 122 BPM", tab:[["Intro","G|----------------|----------------|","D|----------------|----------------|","A|----------------|-3---3----------|","E|-5---5---1---1--|---------3---3--|"],["Chorus","G|----------------|----------------|","D|----------------|----------------|","A|----------------|----------------|","E|-5-5-5-5-1-1-1-1|-3-3-3-3-3-3-3-3|"]]},
+   {t:"Californication", d:321, key:"A minor · 96 BPM", tab:[["Verse — Am / F walk","G|-----2----------|----------------|","D|-------2--------|-----3----------|","A|-0--------------|----------------|","E|----------------|-1--------------|"],["Chorus","G|----------------|----------------|","D|----------------|----------------|","A|-3---3----------|-5---5----------|","E|---------3---3--|----------------|"]]}
+ ]},
+ {title:"Abbey Road", artist:"The Beatles", year:1969, hue:"#3d5a80", init:"AR", tracks:[
+   {t:"Come Together", d:259, key:"D minor · 82 BPM", tab:[["Verse — the swampy riff","G|----------------|----------------|","D|---------3------|----------------|","A|-5---5-------5--|----------------|","E|----------------|-3---3---5------|"],["Chorus","G|----------------|----------------|","D|----------------|----------------|","A|-5-5-5-5-5-5-5-5|----------------|","E|----------------|-3-3-3-3-5-5-5-5|"]]},
+   {t:"Something", d:182, key:"C major · 132 BPM", tab:[["Verse — McCartney, melodic","G|----------------|----------------|","D|-----5----------|----------------|","A|-3-------3------|-5---5----------|","E|----------------|---------3------|"],["Bridge","G|----------------|----------------|","D|----------------|----------------|","A|-7---7---5---5--|-3---3----------|","E|----------------|---------5------|"]]},
+   {t:"Octopus's Garden", d:171, key:"E major · 182 BPM", tab:[["Verse","G|----------------|----------------|","D|----------------|----------------|","A|----------------|-2---2----------|","E|-0---0---4---4--|----------------|"],["Chorus","G|----------------|----------------|","D|----------------|----------------|","A|-0---0---2---2--|----------------|","E|----------------|-0---0---0---0--|"]]},
+   {t:"Here Comes the Sun", d:185, key:"D major · 129 BPM", tab:[["Verse","G|----------------|----------------|","D|-0---0----------|----------------|","A|---------0---0--|-2---2----------|","E|----------------|---------3------|"],["Bridge — 11/8 feel, follow the kick","G|----------------|----------------|","D|----------------|----------------|","A|-0---0---2---2--|----------------|","E|----------------|-3---3---2---2--|"]]}
+ ]},
+ {title:"Nevermind", artist:"Nirvana", year:1991, hue:"#2e6f8e", init:"NV", tracks:[
+   {t:"Smells Like Teen Spirit", d:279, key:"F minor · 117 BPM", tab:[["Verse — root eighths","G|----------------|----------------|","D|----------------|----------------|","A|----------------|-1-1-1-1--------|","E|-1-1-1-1-1-1-1-1|---------4-4-4-4|"],["Chorus","G|----------------|----------------|","D|----------------|----------------|","A|----------------|-1---1----------|","E|-1---1---1---1--|---------4---4--|"]]},
+   {t:"Come as You Are", d:219, key:"E minor · 120 BPM", tab:[["Intro riff (bass doubles guitar)","G|----------------|----------------|","D|----------------|----------------|","A|---------0---0--|---------2------|","E|-0---0-1---1----|-0---0-1---3----|"],["Verse","G|----------------|----------------|","D|----------------|----------------|","A|----------------|-2---2---2---2--|","E|-0---0---0---0--|----------------|"]]},
+   {t:"Lithium", d:257, key:"D major · 124 BPM", tab:[["Verse","G|----------------|----------------|","D|----------------|----------------|","A|----------------|-4---4---2---2--|","E|-0---0---2---2--|----------------|"],["Chorus — loud part","G|----------------|----------------|","D|----------------|----------------|","A|-5-5-5-5--------|-4-4-4-4-2-2-2-2|","E|---------5-5-5-5|----------------|"]]}
+ ]},
+ {title:"Led Zeppelin IV", artist:"Led Zeppelin", year:1971, hue:"#4a4a3f", init:"LZ", tracks:[
+   {t:"Black Dog", d:295, key:"A major · 82 BPM", tab:[["Main riff — count carefully","G|----------------|----------------|","D|----------------|---------5------|","A|-----5---6---7--|-------------7--|","E|-5--------------|-5---5----------|"],["Verse","G|----------------|----------------|","D|----------------|----------------|","A|----------------|----------------|","E|-5---5---5---5--|-5---5---3---0--|"]]},
+   {t:"Rock and Roll", d:220, key:"A major · 170 BPM", tab:[["Verse — JPJ driving","G|----------------|----------------|","D|----------------|----------------|","A|----------------|----------------|","E|-5-5-5-5-5-5-5-5|-5-5-5-5-5-5-5-5|"],["Chorus","G|----------------|----------------|","D|----------------|----------------|","A|-5-5-5-5-5-5-5-5|----------------|","E|----------------|-5-5-5-5-5-5-5-5|"]]},
+   {t:"When the Levee Breaks", d:431, key:"F major · 72 BPM", tab:[["Main groove — heavy & behind the beat","G|----------------|----------------|","D|---------3------|----------------|","A|----------------|---------3------|","E|-1---1-------1--|-1---1-------1--|"]]}
+ ]},
+ {title:"What's Going On", artist:"Marvin Gaye", year:1971, hue:"#6b4e9e", init:"WG", tracks:[
+   {t:"What's Going On", d:233, key:"E major · 102 BPM", tab:[["Verse — Jamerson, one finger, all feel","G|-----6----------|----------------|","D|-------6--------|-----4----------|","A|-7-----------7--|-5-------5------|","E|----------------|-----------7----|"],["Chorus","G|----------------|----------------|","D|-----6----------|----------------|","A|-------7--------|-----5----------|","E|-5-----------5--|-7-------7------|"]]},
+   {t:"Mercy Mercy Me (The Ecology)", d:199, key:"E major · 94 BPM", tab:[["Verse","G|-----6----------|----------------|","D|-------6--------|-----4---6------|","A|-7-----------7--|-5--------------|","E|----------------|----------------|"]]}
+ ]}
+];
+
+/* ================= STATE ================= */
+var S = { album:0, track:0, playing:false, progress:0, mode:"desk", inst:"Bass", source:"ss", live:false, wakeLock:null,
+  albums:null, liveTrack:null, spotifyPlayer:null, deviceId:null, spotifyReady:false, lastSpotifyTrackId:null, searchTimer:null,
+  searchSeq:0, lastApiError:null, searchType:"album", searchResults:null, browseArtist:null,
+  session:[], sessionName:"", contextAlbum:null, savedPlaylist:null, pendingSave:null, sessionStatusHtml:"", sessionStatusKind:"",
+  ssCache:{}, ssSeq:0, ssCurrent:null,
+  mtFiles:[], mtSettings:null, mtSyncing:false, mtStatusHtml:"", mtStatusKind:"", sourceKey:null };
+var $ = function(id){ return document.getElementById(id); };
+function activeAlbums(){ return S.albums || ALBUMS; }
+function curAlbum(){ return S.contextAlbum || activeAlbums()[S.album]; }
+function curTrack(){ var a=curAlbum(); return a && a.tracks ? a.tracks[S.track] : undefined; }
+function escHtml(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function fmt(s){ s=Math.max(0,Math.floor(s)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+function ugURL(){ var a=curAlbum(), t=curTrack(); var artist=(t && t.artist) ? t.artist : (a ? a.artist : ""); return S.source==="ug" ? "https://www.ultimate-guitar.com/search.php?search_type=title&value="+encodeURIComponent(artist+" "+(t?t.t:"")) : "https://www.songsterr.com/a/wa/search?pattern="+encodeURIComponent(artist+" "+(t?t.t:"")); }
+
+/* ================= SONGSTERR — IN-APP TABS =================
+   Ultimate Guitar offers no API or embed, so its tabs can only ever open in
+   the UG site/app. Songsterr is the in-app source: its free public search API
+   (no key) finds the song by artist + title, and the matched song's own
+   Songsterr player page is shown inside the tab pane. The player scrolls
+   itself during its own playback; the app's Spotify-driven auto-scroll is
+   paused while an embedded player is on screen so it isn't scrolled away.
+   CORS REALITY (root cause of the “No Songsterr tab found” bug for songs
+   that plainly have tabs, e.g. Muse — “Hysteria”): Songsterr's API sends
+   NO Access-Control-Allow-Origin header, so a direct fetch() from any web
+   page is blocked by the browser before the answer can be read. The old
+   code swallowed that rejection and reported it as “no match”. The lookup
+   below therefore asks Songsterr ITSELF two ways — a direct fetch (works
+   if Songsterr ever adds CORS headers) and Songsterr's JSONP form of the
+   same endpoint, loaded as a script from songsterr.com, which browsers
+   allow cross-site. The artist/title go only to Songsterr, the source the
+   user chose — never to any third-party relay or proxy. The lookup also
+   tracks whether Songsterr was actually REACHED: a genuine “catalog
+   answered, no match” is reported very differently from “lookup blocked”,
+   and blocked lookups are never cached, so Retry really retries. */
+function ssSlug(s){ return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/&/g,"and").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); }
+function ssNorm(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim(); }
+function ssCleanTitle(t){
+  return String(t||"")
+    .replace(/\s*\([^)]*remaster[^)]*\)/gi,"")
+    .replace(/\s*-\s*(remaster|remastered|live|mono|stereo|edit|version|deluxe).*$/i,"")
+    .replace(/\s*\((feat|featuring|with)\.?[^)]*\)/gi,"")
+    .replace(/\s*\[[^\]]*\]\s*/g," ")
+    .replace(/\s+/g," ").trim();
+}
+function ssSearchURL(artist, title){ return "https://www.songsterr.com/a/wa/search?pattern="+encodeURIComponent(artist+" "+title); }
+function ssUgURL(artist, title){ return "https://www.ultimate-guitar.com/search.php?search_type=title&value="+encodeURIComponent(artist+" "+title); }
+function ssSongURL(song, trackIdx, chords){
+  var base="https://www.songsterr.com/a/wsa/"+ssSlug(song.artist)+"-"+ssSlug(song.title);
+  if(chords) return base+"-chords-s"+song.songId;
+  var tw = S.inst==="Bass" ? "bass-" : (S.inst==="Drums" ? "drum-" : "");
+  return base+"-"+tw+"tab-s"+song.songId+"t"+trackIdx;
+}
+function ssTrackIndexFor(song){
+  var tracks=song.tracks||[];
+  function byHash(prefix){ for(var i=0;i<tracks.length;i++){ if(tracks[i].hash && tracks[i].hash.indexOf(prefix)===0) return i; } return -1; }
+  var idx=-1;
+  if(S.inst==="Bass"){ idx=(typeof song.popularTrackBass==="number" && tracks[song.popularTrackBass]) ? song.popularTrackBass : byHash("bass_"); }
+  else if(S.inst==="Guitar"){ idx=(typeof song.popularTrackGuitar==="number" && tracks[song.popularTrackGuitar]) ? song.popularTrackGuitar : byHash("guitar_"); }
+  else if(S.inst==="Drums"){ idx=(typeof song.popularTrackDrum==="number" && tracks[song.popularTrackDrum]) ? song.popularTrackDrum : byHash("drums_"); }
+  if(idx<0 || idx>=tracks.length) idx=(typeof song.defaultTrack==="number" && tracks[song.defaultTrack]) ? song.defaultTrack : (typeof song.popularTrack==="number" && tracks[song.popularTrack] ? song.popularTrack : 0);
+  return idx;
+}
+function ssNormalizeSong(sg){
+  if(!sg || typeof sg!=="object") return null;
+  var id=(typeof sg.songId!=="undefined" && sg.songId!==null && sg.songId!=="") ? sg.songId : sg.id;
+  if(id===null || typeof id==="undefined" || id==="") return null;
+  var artistName = typeof sg.artist==="string" ? sg.artist : ((sg.artist && sg.artist.name) || sg.artistName || "");
+  var titleVal = sg.title || sg.name || "";
+  if(!titleVal) return null;
+  var out={ songId:id, title:titleVal, artist:artistName,
+    tracks:Array.isArray(sg.tracks)?sg.tracks:[], hasPlayer:!!sg.hasPlayer,
+    hasChords:!!(sg.hasChords || sg.chords), isJunk:!!sg.isJunk };
+  ["popularTrackBass","popularTrackGuitar","popularTrackDrum","popularTrack","defaultTrack"].forEach(function(k){
+    if(typeof sg[k]==="number") out[k]=sg[k];
+  });
+  return out;
+}
+function ssPickSong(results, artist, title){
+  if(!results || !results.length) return null;
+  var wantT=ssNorm(ssCleanTitle(title)), wantA=ssNorm(artist);
+  var best=null, bestScore=0;
+  results.forEach(function(raw){
+    var sg=ssNormalizeSong(raw);
+    if(!sg || sg.isJunk) return;
+    var t=ssNorm(sg.title), a=ssNorm(sg.artist);
+    // Novelty/cover variants ("…was made by…", fingerstyle, covers) are never the
+    // song itself — skip them outright unless the title matches exactly.
+    if(t!==wantT && /cover|fingerstyle|was made|in the style of/.test(t)) return;
+    var score=0, tScore=0;
+    if(t===wantT){ score+=50; tScore=50; }
+    else if(wantT && (t.indexOf(wantT)===0 || wantT.indexOf(t)===0)){ score+=25; tScore=25; }
+    else if(wantT && t.indexOf(wantT)>-1){ score+=10; tScore=10; }
+    if(!tScore) return; // no title evidence at all — not this song
+    if(a===wantA) score+=30;
+    else if(wantA && (a.indexOf(wantA)>-1 || wantA.indexOf(a)>-1)) score+=12;
+    if(sg.hasPlayer) score+=4;
+    // A “(Bass)” entry is a plus when Bass is the selected instrument, not a
+    // variant to penalise; only album/acoustic/live/remaster variants score down.
+    if(t!==wantT && /\((album|acoustic|live|remaster)/i.test(sg.title)) score-=6;
+    if(score>bestScore){ bestScore=score; best=sg; }
+  });
+  return bestScore>0 ? best : null;
+}
+async function ssFetchWithTimeout(url, ms){
+  var ctrl=("AbortController" in window) ? new AbortController() : null;
+  var timer=null;
+  if(ctrl) timer=setTimeout(function(){ try{ ctrl.abort(); }catch(e){} }, ms);
+  try{ return await fetch(url, ctrl ? { signal:ctrl.signal } : undefined); }
+  finally{ if(timer) clearTimeout(timer); }
+}
+var ssJsonpSeq=0;
+/* JSONP against Songsterr's OWN endpoint: the response is loaded as a
+   script from songsterr.com, so the browser's CORS rules for fetch() don't
+   apply, and the query goes only to Songsterr — no relay ever sees it.
+   Resolves with the parsed payload, or null on error/timeout/if the
+   endpoint answers plain JSON instead of a callback wrap. */
+function ssJSONP(url, ms){
+  return new Promise(function(resolve){
+    var cb="__ssJsonp"+(++ssJsonpSeq)+"_"+Date.now();
+    var script=document.createElement("script");
+    var done=false;
+    var timer=setTimeout(function(){ finish(null); }, ms||9000);
+    function finish(val){
+      if(done) return; done=true;
+      clearTimeout(timer);
+      try{ delete window[cb]; }catch(e){ window[cb]=undefined; }
+      if(script.parentNode) script.parentNode.removeChild(script);
+      resolve(val);
+    }
+    window[cb]=function(data){ finish(data); };
+    script.onerror=function(){ finish(null); };
+    script.src=url+(url.indexOf("?")>-1?"&":"?")+"callback="+cb;
+    document.head.appendChild(script);
+  });
+}
+/* Ask one Songsterr API URL for JSON, direct fetch first, then the same
+   URL in JSONP form. Returns {data:Array|null, reached:boolean} — reached
+   means Songsterr actually returned parseable data (even an empty list).
+   Every request here goes to www.songsterr.com and nowhere else. */
+async function ssFetchJSON(target){
+  try{
+    var res=await ssFetchWithTimeout(target, 9000);
+    if(res && res.ok){
+      var data=await res.json();
+      if(Array.isArray(data)) return { data:data, reached:true };
+      if(data && Array.isArray(data.songs)) return { data:data.songs, reached:true };
+    }
+  }catch(e){ /* CORS block — expected today; JSONP below is the working route */ }
+  var jp=await ssJSONP(target, 9000);
+  if(Array.isArray(jp)) return { data:jp, reached:true };
+  if(jp && Array.isArray(jp.songs)) return { data:jp.songs, reached:true };
+  return { data:null, reached:false };
+}
+async function ssLookup(artist, title){
+  var key=ssNorm(artist)+"|"+ssNorm(ssCleanTitle(title));
+  if(S.ssCache[key]) return S.ssCache[key];
+  var clean=ssCleanTitle(title);
+  var p=(async function(){
+    var reached=false;
+    var queries=[artist+" "+clean, clean];
+    for(var qi=0; qi<queries.length; qi++){
+      if(!queries[qi]) continue;
+      var api=await ssFetchJSON("https://www.songsterr.com/api/songs?pattern="+encodeURIComponent(queries[qi]));
+      if(api.reached){
+        reached=true;
+        var pick=ssPickSong(api.data||[], artist, title);
+        if(pick) return { song:pick, reached:true };
+        if(api.data && api.data.length) continue; // catalog answered with other songs — try the broader query
+      }
+      // Modern endpoint empty or unreachable for this query — try Songsterr's
+      // long-standing legacy endpoint, which returns the same catalog in a
+      // slightly different shape (ssNormalizeSong handles both).
+      var legacy=await ssFetchJSON("https://www.songsterr.com/a/ra/songs.json?pattern="+encodeURIComponent(queries[qi]));
+      if(legacy.reached){
+        reached=true;
+        var pick2=ssPickSong(legacy.data||[], artist, title);
+        if(pick2) return { song:pick2, reached:true };
+      }
+    }
+    return { song:null, reached:reached };
+  })();
+  S.ssCache[key]=p;
+  // A blocked lookup must not stick: clear it once it settles so the next
+  // visit to this track (or the Retry button) runs the lookup again.
+  p.then(function(out){ if(out && !out.reached && S.ssCache[key]===p) delete S.ssCache[key]; });
+  return p;
+}
+function retrySongsterr(){
+  if(!S.ssCurrent) return;
+  var key=ssNorm(S.ssCurrent.artist)+"|"+ssNorm(ssCleanTitle(S.ssCurrent.title));
+  delete S.ssCache[key];
+  renderSongsterrPane(S.ssCurrent.artist, S.ssCurrent.title);
+}
+/* Fill the tab pane with the Songsterr player for this track. Called from
+   renderTab / renderLiveTab whenever the current track is a real Spotify
+   track (demo excerpts never reach here). */
+function renderSongsterrPane(artist, title){
+  var seq=++S.ssSeq;
+  markSourceChip("ss");
+  S.ssCurrent={ artist:artist, title:title };
+  var typeName = S.inst==="Chords" ? "Chords" : S.inst+" Tab";
+  $("tabHeadTitle").textContent = title+" — "+S.inst+(S.inst==="Chords"?" chords":" tab");
+  $("tabHeadMeta").textContent = artist+" · Looking up the "+typeName.toLowerCase()+" on Songsterr…";
+  $("ratingBadge").textContent = "Tab by Songsterr · loading…";
+  $("tabBody").innerHTML = '<div class="sect">Songsterr — in-app tab</div><p class="ss-msg">Searching Songsterr for “'+escHtml(title)+'” by '+escHtml(artist)+'…</p>';
+  $("openTabLink").href=ssSearchURL(artist, title);
+  $("openTabLink").textContent="Open in Songsterr ↗";
+  $("tabScroll").scrollTop=0;
+  ssLookup(artist, title).then(function(out){
+    if(seq!==S.ssSeq) return; // a newer track or render superseded this lookup
+    var song=out && out.song;
+    var ugLink=ssUgURL(artist, title);
+    if(!song && out && !out.reached){
+      // The lookup never got an answer — this is NOT “no tab exists”.
+      $("tabHeadMeta").textContent = artist+" · Songsterr lookup didn't get through";
+      $("ratingBadge").textContent = "Songsterr lookup blocked — this isn't “no tab”";
+      $("tabBody").innerHTML = '<div class="sect">Couldn\'t reach Songsterr</div>'
+        +'<p class="ss-msg">The lookup for <b>'+escHtml(title)+'</b> by '+escHtml(artist)+' never got an answer, so this does <b>not</b> mean Songsterr has no '+escHtml(typeName.toLowerCase())+' for it. The app asked Songsterr directly both ways a web page can — and Songsterr didn\'t respond in a readable form this time (its catalog sends no cross-site permission headers for ordinary requests). Retry, or open the Songsterr search below, which goes to the same place in a full page.</p>'
+        +'<p style="margin:0 0 8px"><button type="button" class="ss-open" onclick="retrySongsterr()">Retry the Songsterr lookup</button></p>'
+        +'<p style="margin:0 0 8px"><a class="ss-open alt" href="'+ssSearchURL(artist, title)+'" target="_blank" rel="noopener">Search Songsterr for this song ↗</a></p>'
+        +'<p style="margin:0"><a class="ss-open alt" href="'+ugLink+'" target="_blank" rel="noopener">Open the '+escHtml(title)+' tab on Ultimate Guitar ↗</a></p>';
+      $("openTabLink").href=ssSearchURL(artist, title);
+      $("openTabLink").textContent="Open in Songsterr ↗";
+      return;
+    }
+    if(!song){
+      $("tabHeadMeta").textContent = artist+" · Songsterr answered — no match in its catalog";
+      $("ratingBadge").textContent = "No matching Songsterr tab — fallbacks below";
+      $("tabBody").innerHTML = '<div class="sect">No Songsterr tab for this one</div>'
+        +'<p class="ss-msg">Songsterr\'s catalog answered the lookup, but nothing in it matched <b>'+escHtml(title)+'</b> by '+escHtml(artist)+' closely enough to load automatically. It may be listed under a slightly different title — try the Songsterr search, or the other source:</p>'
+        +'<p style="margin:0 0 8px"><a class="ss-open" href="'+ssSearchURL(artist, title)+'" target="_blank" rel="noopener">Search Songsterr for this song ↗</a></p>'
+        +'<p style="margin:0"><a class="ss-open alt" href="'+ugLink+'" target="_blank" rel="noopener">Open the '+escHtml(title)+' tab on Ultimate Guitar ↗</a></p>'
+        +'<p class="ss-msg" style="margin-top:10px">Ultimate Guitar opens in their site/app — their tabs can\'t be embedded in other apps, which is why Songsterr is the in-app source here.</p>';
+      $("openTabLink").href=ugLink;
+      $("openTabLink").textContent="Open full tab on Ultimate Guitar ↗";
+      return;
+    }
+    var chordsMode = S.inst==="Chords" && !!song.hasChords;
+    var ti=ssTrackIndexFor(song);
+    var track=song.tracks && song.tracks[ti];
+    var url=ssSongURL(song, ti, chordsMode);
+    $("tabHeadMeta").textContent = artist+" · Tab by Songsterr"+(chordsMode ? " · Chords view" : (track && track.instrument ? " · Part: "+track.instrument : ""))+" · Matched automatically on track change";
+    $("ratingBadge").textContent = "Tab by Songsterr · playing in-app";
+    $("tabBody").innerHTML =
+      '<div class="sect">Songsterr — playing in-app</div>'
+      +'<div class="ss-frame-wrap"><iframe class="ss-frame" src="'+url+'" title="Songsterr '+escHtml(typeName.toLowerCase())+' for '+escHtml(title)+' by '+escHtml(artist)+'" allow="autoplay; fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe></div>'
+      +'<p class="ss-msg">That\'s the full '+escHtml(typeName.toLowerCase())+' from Songsterr, loaded right here — its player scrolls itself as its own playback runs, and you can switch parts inside it. Your music keeps playing from Spotify. If the player stays blank (some networks block embedded pages), open the same tab directly:</p>'
+      +'<p style="margin:0 0 8px"><a class="ss-open" href="'+url+'" target="_blank" rel="noopener">Open “'+escHtml(title)+'” in Songsterr ↗</a></p>'
+      +'<p style="margin:0"><a class="ss-open alt" href="'+ugLink+'" target="_blank" rel="noopener">Prefer Ultimate Guitar? Open it there ↗</a></p>';
+    $("openTabLink").href=url;
+    $("openTabLink").textContent="Open in Songsterr ↗";
+  });
+}
+
+/* ================= MY TABS — PRIVATE REPO SYNC =================
+   Downloaded Guitar Pro / text tabs live in the user's own PRIVATE GitHub
+   repo (default wrestleblu/my-tabs, both editable below). The app holds a
+   fine-grained, READ-ONLY GitHub token for just that repo: it is stored
+   only in this device's localStorage, sent only to api.github.com, and
+   can be removed with Disconnect (which also clears the local cache).
+   Sync lists the repo via the git trees API, downloads new/changed tab
+   files, and caches the bytes in IndexedDB keyed by path+sha, so
+   unchanged files are never re-downloaded and the library is available
+   from cache on this device after one token paste. Guitar Pro / MusicXML
+   files render with alphaTab (its own player/soundfont stay disabled —
+   Spotify is the audio; the position marker is driven from Spotify's
+   progress as far as alphaTab allows without its player). Text/chord
+   files render as preformatted text with the app's approximate
+   auto-scroll. Priority per song: My Tabs match first, then Songsterr
+   in-app, then the external Ultimate Guitar / Songsterr links. The user
+   never manages files here — uploads to the repo happen outside the app;
+   this side is token, sync, cache, match, render. */
+var MT_KEY = "stp_mytabs_settings";
+var MT_EXTS = { gp:1, gpx:1, gp3:1, gp4:1, gp5:1, musicxml:1, xml:1, txt:1, crd:1 };
+var MT_TEXT_EXTS = { txt:1, crd:1 };
+var MT = { api:null, path:null, seq:0, atPromise:null };
+var mtDbPromise = null;
+function mtDefaultSettings(){ return { owner:"wrestleblu", repo:"my-tabs", token:"", lastSync:0, lastCount:0 }; }
+function mtLoadSettings(){
+  if(S.mtSettings) return S.mtSettings;
+  var s=mtDefaultSettings();
+  try{
+    var raw=localStorage.getItem(MT_KEY);
+    if(raw){ var p=JSON.parse(raw); if(p){ s.owner=p.owner||s.owner; s.repo=p.repo||s.repo; s.token=p.token||""; s.lastSync=p.lastSync||0; s.lastCount=p.lastCount||0; } }
+  }catch(e){}
+  S.mtSettings=s; return s;
+}
+function mtSaveSettings(){ try{ localStorage.setItem(MT_KEY, JSON.stringify(mtLoadSettings())); }catch(e){} }
+function mtDb(){
+  if(mtDbPromise) return mtDbPromise;
+  mtDbPromise=new Promise(function(resolve,reject){
+    var req=indexedDB.open("stp-mytabs",1);
+    req.onupgradeneeded=function(){ req.result.createObjectStore("files",{ keyPath:"path" }); };
+    req.onsuccess=function(){ resolve(req.result); };
+    req.onerror=function(){ reject(req.error); };
+  });
+  return mtDbPromise;
+}
+function mtDbAll(){ return mtDb().then(function(db){ return new Promise(function(res,rej){ var out=[]; var rq=db.transaction("files","readonly").objectStore("files").openCursor(); rq.onsuccess=function(){ var c=rq.result; if(c){ out.push(c.value); c.continue(); } else res(out); }; rq.onerror=function(){ rej(rq.error); }; }); }); }
+function mtDbGet(path){ return mtDb().then(function(db){ return new Promise(function(res,rej){ var rq=db.transaction("files","readonly").objectStore("files").get(path); rq.onsuccess=function(){ res(rq.result||null); }; rq.onerror=function(){ rej(rq.error); }; }); }); }
+function mtDbPut(rec){ return mtDb().then(function(db){ return new Promise(function(res,rej){ var rq=db.transaction("files","readwrite").objectStore("files").put(rec); rq.onsuccess=function(){ res(); }; rq.onerror=function(){ rej(rq.error); }; }); }); }
+function mtDbDelete(path){ return mtDb().then(function(db){ return new Promise(function(res,rej){ var rq=db.transaction("files","readwrite").objectStore("files").delete(path); rq.onsuccess=function(){ res(); }; rq.onerror=function(){ rej(rq.error); }; }); }); }
+function mtDbClear(){ return mtDb().then(function(db){ return new Promise(function(res,rej){ var rq=db.transaction("files","readwrite").objectStore("files").clear(); rq.onsuccess=function(){ res(); }; rq.onerror=function(){ rej(rq.error); }; }); }); }
+async function mtLoadCached(){
+  try{
+    var all=await mtDbAll();
+    S.mtFiles=all.map(function(r){ return { path:r.path, sha:r.sha, title:r.title, artist:r.artist, kind:r.kind }; });
+  }catch(e){ S.mtFiles=[]; }
+  renderMyTabsPanel();
+}
+/* One GitHub API call against the tabs repo. The token goes ONLY here —
+   api.github.com — and nowhere else in the app. */
+async function mtGh(path, raw){
+  var s=mtLoadSettings();
+  var headers={ "Authorization":"Bearer "+s.token, "Accept": raw ? "application/vnd.github.raw" : "application/vnd.github+json", "X-GitHub-Api-Version":"2022-11-28" };
+  var res;
+  try{ res=await fetch("https://api.github.com/repos/"+encodeURIComponent(s.owner)+"/"+encodeURIComponent(s.repo)+path, { headers:headers }); }
+  catch(e){ var ne=new Error("Couldn't reach api.github.com ("+((e&&e.message)||"network error")+")"); ne.status=0; throw ne; }
+  if(!res.ok){
+    var msg="HTTP "+res.status;
+    try{ var j=await res.json(); if(j && j.message) msg=j.message; }catch(e){}
+    var err=new Error(msg); err.status=res.status; throw err;
+  }
+  return raw ? res.arrayBuffer() : res.json();
+}
+function mtGhErrorText(e){
+  var s=mtLoadSettings();
+  var st=e && e.status, msg=e && e.message ? escHtml(e.message) : "";
+  if(st===401) return "<b>GitHub rejected the token (401"+(msg ? ": "+msg : "")+")</b> — the token is wrong, expired, or revoked. Create a fresh fine-grained token with <b>read-only Contents</b> access to "+escHtml(s.owner)+"/"+escHtml(s.repo)+", paste it above, and Save &amp; sync again.";
+  if(st===404) return "<b>Repo not found (404"+(msg ? ": "+msg : "")+")</b> — either <b>"+escHtml(s.owner)+"/"+escHtml(s.repo)+"</b> doesn't exist, or the token can't see it: GitHub answers 404 (not 403) for private repos the token has no access to. Check the owner/repo names and that the token is scoped to this repo.";
+  if(st===403) return "<b>GitHub refused the sync (403"+(msg ? ": "+msg : "")+")</b> — usually rate limiting, or a token without Contents permission for this repo. Wait a bit and try Sync now again.";
+  if(!st) return "<b>Couldn't reach GitHub.</b> "+(msg || "Check your connection")+" — your cached tabs (if any) still work below.";
+  return "<b>GitHub sync failed ("+st+")</b>"+(msg ? " — "+msg : "")+". Your cached tabs (if any) still work.";
+}
+function mtParseFilename(path){
+  var base=path.split("/").pop().replace(/\.[^.]+$/,"").replace(/_/g," ").replace(/\s+/g," ").trim();
+  var idx=base.indexOf(" - ");
+  if(idx>0) return { artist:base.slice(0,idx).trim(), title:base.slice(idx+3).trim() };
+  return { artist:"", title:base };
+}
+function mtExtOf(path){ return (path.split(".").pop()||"").toLowerCase(); }
+function mtKindOf(path){ return MT_TEXT_EXTS[mtExtOf(path)] ? "text" : "gp"; }
+function mtLoadAlphaTab(){
+  if(window.alphaTab) return Promise.resolve(window.alphaTab);
+  if(MT.atPromise) return MT.atPromise;
+  MT.atPromise=new Promise(function(resolve,reject){
+    var sc=document.createElement("script");
+    sc.src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1/dist/alphaTab.min.js";
+    sc.onload=function(){ if(window.alphaTab) resolve(window.alphaTab); else reject(new Error("alphaTab loaded but didn't initialise")); };
+    sc.onerror=function(){ reject(new Error("the alphaTab renderer couldn't be loaded from its CDN")); };
+    document.head.appendChild(sc);
+  });
+  MT.atPromise.catch(function(){ MT.atPromise=null; });
+  return MT.atPromise;
+}
+/* Read title/artist out of a Guitar Pro / MusicXML file's own metadata via
+   alphaTab's score loader (parse only — nothing is rendered or played). */
+async function mtScoreMeta(bytes){
+  try{
+    var at=await mtLoadAlphaTab();
+    if(at && at.importer && at.importer.ScoreLoader){
+      var score=at.importer.ScoreLoader.loadScoreFromBytes(bytes, new at.Settings());
+      if(score && (score.title || score.artist)) return { title:score.title||"", artist:score.artist||"" };
+    }
+  }catch(e){}
+  return null;
+}
+async function mtSync(manual){
+  var s=mtLoadSettings();
+  if(S.mtSyncing) return;
+  if(!s.token){
+    if(manual) mtSetStatus("<b>No token saved yet</b> — paste your read-only GitHub token above, then tap <b>Save &amp; sync</b>.", "err");
+    return;
+  }
+  S.mtSyncing=true;
+  mtSetStatus("Syncing with <b>"+escHtml(s.owner)+"/"+escHtml(s.repo)+"</b>…", "");
+  try{
+    var tree=await mtGh("/git/trees/HEAD?recursive=1", false);
+    var entries=(tree.tree||[]).filter(function(en){ return en.type==="blob" && MT_EXTS[mtExtOf(en.path)]; });
+    var existing=await mtDbAll();
+    var byPath={}; existing.forEach(function(r){ byPath[r.path]=r; });
+    var seen={}, added=0, kept=0, files=[];
+    for(var i=0;i<entries.length;i++){
+      var en=entries[i]; seen[en.path]=1;
+      var prev=byPath[en.path];
+      if(prev && prev.sha===en.sha){
+        kept++;
+        files.push({ path:en.path, sha:en.sha, title:prev.title, artist:prev.artist, kind:prev.kind });
+        continue;
+      }
+      var buf=await mtGh("/contents/"+en.path.split("/").map(encodeURIComponent).join("/"), true);
+      var bytes=new Uint8Array(buf);
+      var meta=mtParseFilename(en.path);
+      if(!MT_TEXT_EXTS[mtExtOf(en.path)]){
+        var sm=await mtScoreMeta(bytes);
+        if(sm){ if(sm.title) meta.title=sm.title; if(sm.artist) meta.artist=sm.artist; }
+      }
+      var rec={ path:en.path, sha:en.sha, title:meta.title, artist:meta.artist, kind:mtKindOf(en.path), data:buf };
+      await mtDbPut(rec);
+      added++;
+      files.push({ path:en.path, sha:en.sha, title:meta.title, artist:meta.artist, kind:rec.kind });
+    }
+    for(var p in byPath){ if(!seen[p]){ try{ await mtDbDelete(p); }catch(e){} } }
+    S.mtFiles=files;
+    s.lastSync=Date.now(); s.lastCount=files.length; mtSaveSettings();
+    mtSetStatus("<b>Synced ✓</b> — "+files.length+" tab file"+(files.length===1?"":"s")+" in "+escHtml(s.owner)+"/"+escHtml(s.repo)+" ("+added+" downloaded, "+kept+" already cached, unchanged files skipped). Last synced "+new Date(s.lastSync).toLocaleString()+".", "ok");
+  }catch(e){
+    mtSetStatus(mtGhErrorText(e), "err");
+  }
+  S.mtSyncing=false;
+  renderMyTabsPanel();
+  renderTab(false);
+}
+function mtFindMatch(artist, title){
+  if(!S.mtFiles || !S.mtFiles.length) return null;
+  var wantT=ssNorm(ssCleanTitle(title||"")), wantA=ssNorm(artist||"");
+  if(!wantT) return null;
+  var best=null, bestScore=0;
+  S.mtFiles.forEach(function(f){
+    var t=ssNorm(ssCleanTitle(f.title||"")), a=ssNorm(f.artist||"");
+    if(!t) return;
+    var score=0;
+    if(t===wantT) score+=50;
+    else if(t.indexOf(wantT)===0 || wantT.indexOf(t)===0) score+=25;
+    else if(t.indexOf(wantT)>-1) score+=10;
+    else return; // no title evidence — not this song
+    if(a && wantA){
+      if(a===wantA) score+=30;
+      else if(a.indexOf(wantA)>-1 || wantA.indexOf(a)>-1) score+=12;
+    } else if(!a){ score+=5; } // filename carried no artist — title-only evidence
+    // Prefer the file for the selected instrument when the path says which part it is
+    var pth=(f.path||"").toLowerCase();
+    var inst=S.inst.toLowerCase();
+    if(inst!=="chords" && pth.indexOf(inst)>-1) score+=4;
+    if(score>bestScore){ bestScore=score; best=f; }
+  });
+  return bestScore>0 ? best : null;
+}
+function currentArtistTitle(){
+  if(S.liveTrack) return { artist:S.liveTrack.artist, title:S.liveTrack.t };
+  var a=curAlbum(), t=curTrack();
+  if(!a || !t) return null;
+  return { artist:(t.artist || a.artist || ""), title:t.t };
+}
+function currentTrackKeyForSource(){
+  var at=currentArtistTitle();
+  return at ? ssNorm(at.artist)+"|"+ssNorm(ssCleanTitle(at.title)) : null;
+}
+function markSourceChip(s){
+  var mt=$("chipMT"), ss=$("chipSS"), ug=$("chipUG");
+  if(mt) mt.classList.toggle("on", s==="mt");
+  if(ss) ss.classList.toggle("on", s==="ss");
+  if(ug) ug.classList.toggle("on", s==="ug");
+}
+/* Per-song source priority: an explicit chip tap wins for that song only;
+   otherwise a My Tabs match beats the standing Songsterr/UG preference. */
+function resolveSource(artist, title){
+  var key=ssNorm(artist||"")+"|"+ssNorm(ssCleanTitle(title||""));
+  if(S.sourceKey && S.sourceKey===key && S.source){
+    if(S.source==="mt") return mtFindMatch(artist, title) ? "mt" : "mt-none";
+    return S.source;
+  }
+  if(mtFindMatch(artist, title)) return "mt";
+  return S.source==="ug" ? "ug" : "ss";
+}
+function mtRepoFileURL(path){
+  var s=mtLoadSettings();
+  return "https://github.com/"+encodeURIComponent(s.owner)+"/"+encodeURIComponent(s.repo)+"/blob/HEAD/"+path.split("/").map(encodeURIComponent).join("/");
+}
+function mtFallbackLinks(artist, title){
+  return '<p style="margin:0 0 8px"><a class="ss-open" href="'+ssSearchURL(artist, title)+'" target="_blank" rel="noopener">Search Songsterr for this song ↗</a></p>'
+    +'<p style="margin:0"><a class="ss-open alt" href="'+ssUgURL(artist, title)+'" target="_blank" rel="noopener">Open the tab on Ultimate Guitar ↗</a></p>';
+}
+function mtTeardown(){
+  if(MT.api){ try{ MT.api.destroy(); }catch(e){} MT.api=null; }
+  MT.path=null;
+  MT.seq++;
+}
+async function renderMyTabsPane(entry, artist, title){
+  mtTeardown();
+  var seq=MT.seq;
+  MT.path=entry.path;
+  markSourceChip("mt");
+  $("tabHeadTitle").textContent = title+" — "+S.inst+(S.inst==="Chords"?" chords":" tab");
+  $("tabHeadMeta").textContent = artist+" · Downloaded tab from your private repo — "+entry.path;
+  $("ratingBadge").textContent = "My Tabs · downloaded file, rendered in-app";
+  $("openTabLink").href = mtRepoFileURL(entry.path);
+  $("openTabLink").textContent = "View file in your tabs repo ↗";
+  $("tabScroll").scrollTop=0;
+  $("tabBody").innerHTML = '<div class="sect">My Tabs — loading from this device\'s cache…</div><p class="ss-msg">Loading “'+escHtml(title)+'” ('+escHtml(entry.path)+')…</p>';
+  var rec=null;
+  try{ rec=await mtDbGet(entry.path); }catch(e){}
+  if(seq!==MT.seq) return; // a newer track/render superseded this one
+  if(!rec || !rec.data){
+    $("tabBody").innerHTML = '<div class="sect">My Tabs — file not in this device\'s cache</div>'
+      +'<p class="ss-msg">A file in your repo matched <b>'+escHtml(title)+'</b>, but its contents aren\'t cached on this device yet. Tap <b>Sync now</b> in the My Tabs panel (left) to download it — after that it renders here automatically.</p>'
+      + mtFallbackLinks(artist, title);
+    return;
+  }
+  if(rec.kind==="text"){
+    var text="";
+    try{ text=new TextDecoder("utf-8").decode(rec.data); }catch(e){}
+    if(!text){ try{ text=String.fromCharCode.apply(null, new Uint8Array(rec.data)); }catch(e){ text=""; } }
+    $("tabBody").innerHTML = '<div class="sect">My Tabs — downloaded '+escHtml(mtExtOf(entry.path).toUpperCase())+' file</div><pre>'+escHtml(text)+'</pre>';
+    return;
+  }
+  $("tabBody").innerHTML = '<div class="sect">My Tabs — downloaded tab, rendered in-app</div>'
+    +'<div class="at-sheet" id="atSheet"><p class="ss-msg">Rendering “'+escHtml(title)+'” from '+escHtml(entry.path)+'…</p></div>'
+    +'<p class="ss-msg">Rendered from the Guitar Pro file in your private repo ('+escHtml(entry.path)+'). Spotify stays the audio — alphaTab\'s own player is off; the position marker follows Spotify\'s progress as closely as alphaTab allows without it, and the pane auto-scrolls with playback.</p>';
+  var at=null;
+  try{ at=await mtLoadAlphaTab(); }catch(e){ at=null; }
+  if(seq!==MT.seq) return;
+  var sheet=$("atSheet");
+  if(!at || !sheet){
+    $("tabBody").innerHTML = '<div class="sect">My Tabs — renderer unavailable</div>'
+      +'<p class="ss-msg">The tab file for <b>'+escHtml(title)+'</b> is downloaded and cached, but the notation renderer (alphaTab) couldn\'t be loaded from its CDN just now. Check your connection and re-select the track, or open the file from your repo:</p>'
+      +'<p style="margin:0 0 8px"><a class="ss-open" href="'+mtRepoFileURL(entry.path)+'" target="_blank" rel="noopener">Open '+escHtml(entry.path)+' in your repo ↗</a></p>'
+      + mtFallbackLinks(artist, title);
+    return;
+  }
+  sheet.innerHTML="";
+  try{
+    var settings=new at.Settings();
+    settings.core.fontDirectory="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1/dist/font/";
+    try{ settings.core.useWorkers=false; }catch(e){}
+    try{ settings.player.enablePlayer=false; }catch(e){}
+    try{ if(at.PlayerMode && settings.player) settings.player.playerMode=at.PlayerMode.Disabled; }catch(e){}
+    try{ settings.player.enableCursor=true; }catch(e){}
+    try{ settings.display.scale=0.9; }catch(e){}
+    var api=new at.AlphaTabApi(sheet, settings);
+    MT.api=api; MT.path=entry.path;
+    if(api.error && api.error.on) api.error.on(function(err){
+      if(seq!==MT.seq) return;
+      sheet.innerHTML='<p class="ss-msg">alphaTab couldn\'t render this file ('+escHtml((err && err.message) || "unknown error")+'). It may be a format variant alphaTab doesn\'t support — the file itself is safe in your repo, and the other sources below still work.</p>';
+    });
+    if(api.scoreLoaded && api.scoreLoaded.on) api.scoreLoaded.on(function(score){
+      // Show the part for the selected instrument when the file has one
+      try{
+        if(score && score.tracks && score.tracks.length>1){
+          var want=S.inst.toLowerCase(), match=null;
+          score.tracks.forEach(function(tr){ if(!match && tr.name && tr.name.toLowerCase().indexOf(want)>-1) match=tr; });
+          if(match && api.renderTracks) api.renderTracks([match]);
+        }
+      }catch(e){}
+    });
+    api.load(new Uint8Array(rec.data));
+  }catch(e){
+    sheet.innerHTML='<p class="ss-msg">alphaTab couldn\'t render this file ('+escHtml((e && e.message) || "error")+'). The file itself is safe in your repo.</p>';
+  }
+}
+function renderMyTabsEmptyPane(artist, title){
+  mtTeardown();
+  markSourceChip("mt");
+  var s=mtLoadSettings();
+  $("tabHeadTitle").textContent = title+" — "+S.inst+(S.inst==="Chords"?" chords":" tab");
+  $("tabHeadMeta").textContent = artist+" · No downloaded tab for this song in "+s.owner+"/"+s.repo;
+  $("ratingBadge").textContent = "My Tabs: no match — fallbacks below";
+  $("tabBody").innerHTML = '<div class="sect">No downloaded tab for this one</div>'
+    +'<p class="ss-msg">Your private tabs repo has no file matching <b>'+escHtml(title)+'</b> by '+escHtml(artist)+' yet'+(s.token ? ' ('+S.mtFiles.length+' tab file'+(S.mtFiles.length===1?"":"s")+' synced to this device)' : ' — and no token is saved on this device, so nothing has synced')+'. Once this song\'s tab is added to the repo and synced, it appears here automatically, ahead of Songsterr. Until then:</p>'
+    +'<p style="margin:0 0 8px"><button type="button" class="ss-open" onclick="setSource(\'ss\')">Load the Songsterr tab in-app instead</button></p>'
+    + mtFallbackLinks(artist, title);
+  $("openTabLink").href=ssSearchURL(artist, title);
+  $("openTabLink").textContent="Open in Songsterr ↗";
+  $("tabScroll").scrollTop=0;
+}
+function mtSetStatus(html, kind){
+  S.mtStatusHtml=html||""; S.mtStatusKind=kind||"";
+  var el=$("mtStatus");
+  if(el){ el.innerHTML=S.mtStatusHtml; el.className="mt-status"+(html ? " show "+(kind||"") : ""); }
+}
+function mtField(k, v){ mtLoadSettings()[k]=v.trim(); }
+function mtSaveAndSync(){ mtSaveSettings(); mtSync(true); }
+function mtDisconnect(){
+  try{ localStorage.removeItem(MT_KEY); }catch(e){}
+  S.mtSettings=mtDefaultSettings();
+  S.mtFiles=[];
+  var tokEl=$("mtToken"); if(tokEl) tokEl.value="";
+  var ownEl=$("mtOwner"); if(ownEl) ownEl.value=S.mtSettings.owner;
+  var repoEl=$("mtRepo"); if(repoEl) repoEl.value=S.mtSettings.repo;
+  mtDbClear();
+  mtTeardown();
+  S.mtStatusHtml="<b>Disconnected.</b> The token and every cached tab file were removed from this device. The repo itself is untouched.";
+  S.mtStatusKind="ok";
+  renderMyTabsPanel();
+  mtSetStatus(S.mtStatusHtml, S.mtStatusKind);
+  renderTab(false);
+  toast("My Tabs disconnected — token + cache cleared on this device");
+}
+function renderMyTabsPanel(){
+  var el=$("myTabsPanel"); if(!el) return;
+  var s=mtLoadSettings();
+  var connected=!!s.token;
+  var html="";
+  html+='<label style="display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-top:2px">GitHub owner</label>'
+    +'<input class="search" id="mtOwner" type="text" autocomplete="off" spellcheck="false" value="'+escHtml(s.owner)+'" oninput="mtField(\'owner\',this.value)"/>';
+  html+='<label style="display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-top:8px">Private tabs repo</label>'
+    +'<input class="search" id="mtRepo" type="text" autocomplete="off" spellcheck="false" value="'+escHtml(s.repo)+'" oninput="mtField(\'repo\',this.value)"/>';
+  html+='<label style="display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-top:8px">GitHub token — fine-grained, read-only Contents</label>'
+    +'<input class="search" id="mtToken" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…" value="'+escHtml(s.token)+'" oninput="mtField(\'token\',this.value)"/>';
+  html+='<div class="mt-actions"><button type="button" class="btn green" onclick="mtSaveAndSync()">Save &amp; sync</button><button type="button" class="btn" onclick="mtSync(true)">Sync now</button></div>';
+  html+='<div class="mt-actions"><button type="button" class="btn" onclick="mtDisconnect()">Disconnect — clear token + cache</button></div>';
+  html+='<p class="mt-note">The token is stored <b style="color:var(--text)">only on this device</b> (localStorage) and sent <b style="color:var(--text)">only to api.github.com</b> — nowhere else, ever. Create it in GitHub → Settings → Developer settings → Fine-grained tokens, scoped to just this repo with <b style="color:var(--text)">Contents: Read-only</b>. Paste it once per device; after that, sync is automatic and cached tabs work without re-downloading. Adding files to the repo is done for you — there is nothing to manage here.</p>';
+  html+='<div class="mt-status" id="mtStatus" role="alert"></div>';
+  if(s.lastSync) html+='<p class="mt-note">Last synced '+new Date(s.lastSync).toLocaleString()+' · '+s.lastCount+' tab file'+(s.lastCount===1?"":"s")+'.</p>';
+  if(S.mtFiles && S.mtFiles.length){
+    html+='<div style="margin-top:8px">'+S.mtFiles.slice(0,40).map(function(f){
+      return '<div class="mt-file"><b>'+escHtml(f.title || f.path)+'</b>'+(f.artist ? ' — '+escHtml(f.artist) : '')+' <span style="color:var(--faint)">('+escHtml(mtExtOf(f.path).toUpperCase())+')</span></div>';
+    }).join("")+'</div>';
+    if(S.mtFiles.length>40) html+='<p class="mt-note">…and '+(S.mtFiles.length-40)+' more in the repo.</p>';
+  } else if(connected){
+    html+='<p class="mt-note">No tab files cached yet — tap <b style="color:var(--text)">Sync now</b>. Supported: .gp, .gpx, .gp3, .gp4, .gp5, .musicxml, .xml, .txt, .crd.</p>';
+  }
+  el.innerHTML=html;
+  if(S.mtStatusHtml) mtSetStatus(S.mtStatusHtml, S.mtStatusKind);
+}
+
+var toastTimer=null;
+function toast(msg){ var el=$("toast"); el.textContent=msg; el.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(function(){ el.classList.remove("show"); },2600); }
+
+/* ================= RENDER ================= */
+var SEARCH_TYPES = {
+  album:{ label:"Albums", heading:"Albums — tap one, press play", placeholder:"Search albums…", emptyLive:"No albums found on Spotify for that search." },
+  artist:{ label:"Artists", heading:"Artists — tap one to see their albums", placeholder:"Search artists…", emptyLive:"No artists found on Spotify for that search." },
+  track:{ label:"Tracks", heading:"Tracks — tap one to play it", placeholder:"Search tracks…", emptyLive:"No tracks found on Spotify for that search." },
+  playlist:{ label:"Playlists", heading:"Playlists — tap one to open it", placeholder:"Search playlists…", emptyLive:"No playlists found on Spotify for that search." }
+};
+function setSearchType(type){
+  if(!SEARCH_TYPES[type]) type="album";
+  S.searchType=type; S.browseArtist=null; S.searchResults=null;
+  document.querySelectorAll(".type-seg button").forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-stype")===type); });
+  updateBrowseUI();
+  if(S.live){
+    var q=($("albumSearch").value||"").trim();
+    if(q){ clearTimeout(S.searchTimer); S.searchTimer=setTimeout(searchSpotify, 250); }
+    else { S.albums=null; showSearchStatus(""); renderAlbums(); }
+  } else {
+    renderSearchResults();
+  }
+}
+function updateBrowseUI(){
+  var meta=SEARCH_TYPES[S.searchType]||SEARCH_TYPES.album;
+  if(S.browseArtist){
+    $("browseTitle").textContent = S.browseArtist.name+" — albums";
+  } else {
+    $("browseTitle").textContent = meta.heading;
+  }
+  $("albumSearch").placeholder = meta.placeholder;
+  var ctx=$("browseContext");
+  if(S.browseArtist){
+    ctx.innerHTML='<span>Showing albums by <b>'+escHtml(S.browseArtist.name)+'</b></span><button type="button" onclick="clearBrowseArtist()">← Back to artists</button>';
+    ctx.classList.add("show");
+  } else { ctx.innerHTML=""; ctx.classList.remove("show"); }
+}
+function clearBrowseArtist(){
+  S.browseArtist=null; updateBrowseUI();
+  if(S.live){ var q=($("albumSearch").value||"").trim(); if(q) searchSpotify(); else { S.albums=null; renderAlbums(); } }
+  else renderSearchResults();
+}
+function onAlbumSearchInput(){
+  S.browseArtist=null; updateBrowseUI();
+  if(S.live){ clearTimeout(S.searchTimer); S.searchTimer=setTimeout(searchSpotify, 450); }
+  else renderSearchResults();
+}
+function renderSearchResults(){
+  if(S.browseArtist){ renderAlbums(); return; }
+  if(S.searchType==="artist"){ renderArtistResults(); return; }
+  if(S.searchType==="track"){ renderTrackResults(); return; }
+  if(S.searchType==="playlist"){ renderPlaylistResults(); return; }
+  renderAlbums();
+}
+/* ---- Demo-mode derived results (from the bundled demo albums) ---- */
+function demoArtists(){
+  var seen={}, out=[];
+  ALBUMS.forEach(function(a){ if(!seen[a.artist]){ seen[a.artist]=1; out.push({ name:a.artist, hue:a.hue, init:initialsOf(a.artist), meta: ALBUMS.filter(function(x){return x.artist===a.artist;}).length+" demo album(s)" }); } });
+  return out;
+}
+function demoTracks(){
+  var out=[];
+  ALBUMS.forEach(function(a,ai){ a.tracks.forEach(function(t,ti){ out.push({ t:t.t, artist:a.artist, albumTitle:a.title, d:t.d, hue:a.hue, init:a.init, albumIdx:ai, trackIdx:ti }); }); });
+  return out;
+}
+function demoPlaylists(){
+  return [
+    { name:"Demo Road Trip", owner:"Tab Player demo", meta: ALBUMS[0].tracks.length+" tracks · starts with "+ALBUMS[0].title, hue:"#3d5a80", init:"RT", albumIdx:0 },
+    { name:"Bass Practice Mix", owner:"Tab Player demo", meta: ALBUMS[1].tracks.length+" tracks · starts with "+ALBUMS[1].title, hue:"#9c3226", init:"BP", albumIdx:1 }
+  ];
+}
+function renderArtistResults(){
+  var q=($("albumSearch").value||"").toLowerCase();
+  var list = S.searchResults && S.searchResults.type==="artist" ? S.searchResults.items : null;
+  var html="";
+  if(S.live && list){
+    if(!list.length){ $("albumList").innerHTML='<p style="color:var(--faint);font-size:13px;padding:6px">'+SEARCH_TYPES.artist.emptyLive+'</p>'; return; }
+    list.forEach(function(ar,i){
+      var cover = ar.img ? '<img src="'+ar.img+'" alt="" style="width:52px;height:52px;border-radius:50%;object-fit:cover;flex:none"/>' : '<span class="cover" style="background:'+ar.hue+';border-radius:50%">'+escHtml(ar.init)+'</span>';
+      var meta = [ar.genres, ar.followers].filter(Boolean).join(" · ") || "Artist";
+      html+='<button class="result-row artist" onclick="browseArtist('+i+')">'+cover+'<span><b>'+escHtml(ar.name)+'</b><span>'+escHtml(meta)+'</span></span><span class="go">›</span></button>';
+    });
+    $("albumList").innerHTML=html; return;
+  }
+  demoArtists().forEach(function(ar,di){
+    if(q && ar.name.toLowerCase().indexOf(q)===-1) return;
+    html+='<button class="result-row artist" onclick="browseDemoArtist('+di+')"><span class="cover" style="background:'+ar.hue+';border-radius:50%">'+escHtml(ar.init)+'</span><span><b>'+escHtml(ar.name)+'</b><span>'+escHtml(ar.meta)+' — connect Spotify to browse the full catalogue</span></span><span class="go">›</span></button>';
+  });
+  $("albumList").innerHTML = html || '<p style="color:var(--faint);font-size:13px;padding:6px">No demo artists match — connect Spotify to search all artists.</p>';
+}
+function browseDemoArtist(di){
+  var ar=demoArtists()[di]; if(!ar) return;
+  var name=ar.name;
+  var idx=-1; ALBUMS.forEach(function(a,i){ if(a.artist===name && idx===-1) idx=i; });
+  if(idx===-1) return;
+  S.browseArtist={ name:name, id:null };
+  updateBrowseUI(); selectAlbum(idx);
+  toast(name+" — showing their demo album. Connect Spotify for the full catalogue.");
+}
+function renderTrackResults(){
+  var q=($("albumSearch").value||"").toLowerCase();
+  var list = S.searchResults && S.searchResults.type==="track" ? S.searchResults.items : null;
+  var html="";
+  if(S.live && list){
+    if(!list.length){ $("albumList").innerHTML='<p style="color:var(--faint);font-size:13px;padding:6px">'+SEARCH_TYPES.track.emptyLive+'</p>'; return; }
+    list.forEach(function(tr,i){
+      var cover = tr.img ? '<img src="'+tr.img+'" alt="" style="width:52px;height:52px;border-radius:8px;object-fit:cover;flex:none"/>' : '<span class="cover" style="background:'+tr.hue+'">'+escHtml(tr.init)+'</span>';
+      html+='<div class="result-wrap"><button class="result-row" onclick="playSearchTrack('+i+')">'+cover+'<span><b>'+escHtml(tr.t)+'</b><span>'+escHtml(tr.artist)+' · '+escHtml(tr.albumTitle)+' · '+fmt(tr.d)+'</span></span><span class="go">▶</span></button>'
+        +'<button type="button" class="add-btn" onclick="stageSearchTrack('+i+')" aria-label="Add '+escHtml(tr.t)+' to new playlist" title="Add to new playlist">+</button></div>';
+    });
+    $("albumList").innerHTML=html; return;
+  }
+  demoTracks().forEach(function(tr){
+    if(q && (tr.t+" "+tr.artist).toLowerCase().indexOf(q)===-1) return;
+    html+='<div class="result-wrap"><button class="result-row" onclick="playDemoTrack('+tr.albumIdx+','+tr.trackIdx+')"><span class="cover" style="background:'+tr.hue+'">'+escHtml(tr.init)+'</span><span><b>'+escHtml(tr.t)+'</b><span>'+escHtml(tr.artist)+' · '+escHtml(tr.albumTitle)+' · '+fmt(tr.d)+'</span></span><span class="go">▶</span></button>'
+      +'<button type="button" class="add-btn" onclick="stageDemoTrack('+tr.albumIdx+','+tr.trackIdx+')" aria-label="Add '+escHtml(tr.t)+' to new playlist" title="Add to new playlist">+</button></div>';
+  });
+  $("albumList").innerHTML = html || '<p style="color:var(--faint);font-size:13px;padding:6px">No demo tracks match — connect Spotify to search all tracks.</p>';
+}
+function playDemoTrack(ai,ti){ S.albums=null; selectAlbum(ai); selectTrack(ti,true); }
+function renderPlaylistResults(){
+  var q=($("albumSearch").value||"").toLowerCase();
+  var list = S.searchResults && S.searchResults.type==="playlist" ? S.searchResults.items : null;
+  var html="";
+  if(S.live && list){
+    if(!list.length){ $("albumList").innerHTML='<p style="color:var(--faint);font-size:13px;padding:6px">'+SEARCH_TYPES.playlist.emptyLive+'</p>'; return; }
+    list.forEach(function(pl,i){
+      var cover = pl.img ? '<img src="'+pl.img+'" alt="" style="width:52px;height:52px;border-radius:8px;object-fit:cover;flex:none"/>' : '<span class="cover" style="background:'+pl.hue+'">'+escHtml(pl.init)+'</span>';
+      html+='<button class="result-row" onclick="openSearchPlaylist('+i+')">'+cover+'<span><b>'+escHtml(pl.name)+'</b><span>'+escHtml(pl.meta)+'</span></span><span class="go">›</span></button>';
+    });
+    $("albumList").innerHTML=html; return;
+  }
+  demoPlaylists().forEach(function(pl){
+    if(q && pl.name.toLowerCase().indexOf(q)===-1) return;
+    html+='<button class="result-row" onclick="selectAlbum('+pl.albumIdx+')"><span class="cover" style="background:'+pl.hue+'">'+escHtml(pl.init)+'</span><span><b>'+escHtml(pl.name)+'</b><span>'+escHtml(pl.meta)+' — demo; connect Spotify for real playlists</span></span><span class="go">›</span></button>';
+  });
+  $("albumList").innerHTML = html || '<p style="color:var(--faint);font-size:13px;padding:6px">No demo playlists match — connect Spotify to search playlists.</p>';
+}
+/* ================= NEW PLAYLIST — SESSION STAGING =================
+   Tracks are staged in memory only (S.session) until the user either plays
+   the session in-app or explicitly saves it to Spotify. Nothing is written
+   to the user's account until “Save to Spotify” is tapped. */
+function makeStageItem(a, t){
+  return { t:t.t, d:t.d, key:t.key||"", uri:t.uri||null, id:t.id||null, artist:(t.artist||a.artist||""), albumTitle:a.title||"", hue:a.hue, init:a.init, tab:t.tab||null };
+}
+function stageItem(item){
+  if(!item) return;
+  S.session.push(item); S.savedPlaylist=null;
+  renderSession();
+  toast("Added “"+item.t+"” to New playlist ("+S.session.length+" staged)");
+}
+function stageAlbumTrack(i){
+  var a=curAlbum(); if(!a || a.isSession || !a.tracks[i]) return;
+  stageItem(makeStageItem(a, a.tracks[i]));
+}
+function stageDemoTrack(ai, ti){
+  var a=ALBUMS[ai]; if(!a || !a.tracks[ti]) return;
+  stageItem(makeStageItem(a, a.tracks[ti]));
+}
+function stageSearchTrack(i){
+  var list=S.searchResults && S.searchResults.type==="track" ? S.searchResults.items : null;
+  if(!list || !list[i]) return;
+  var tr=list[i];
+  stageItem({ t:tr.t, d:tr.d, key:tr.artist, uri:tr.uri||null, id:tr.id||null, artist:tr.artist, albumTitle:tr.albumTitle, hue:tr.hue, init:tr.init, tab:null });
+}
+async function stageAllFromAlbum(i){
+  var a=activeAlbums()[i]; if(!a) return;
+  if(S.live && a.spotifyUri && !a.tracks.length){ toast("Loading “"+a.title+"” tracks…"); await loadContextTracks(a); }
+  if(!a.tracks.length){ toast("No tracks loaded for “"+a.title+"” yet — open the album first, then add all"); return; }
+  a.tracks.forEach(function(t){ S.session.push(makeStageItem(a, t)); });
+  S.savedPlaylist=null; renderSession();
+  toast("Added all "+a.tracks.length+" tracks from “"+a.title+"” — "+S.session.length+" staged");
+}
+async function stageAllCurrent(){
+  var a=curAlbum(); if(!a || a.isSession) return;
+  if(S.live && a.spotifyUri && !a.tracks.length){ await loadContextTracks(a); renderTracks(); }
+  if(!a.tracks.length){ toast("No tracks loaded yet — give it a second and try again"); return; }
+  a.tracks.forEach(function(t){ S.session.push(makeStageItem(a, t)); });
+  S.savedPlaylist=null; renderSession();
+  toast("Added all "+a.tracks.length+" tracks from “"+a.title+"” — "+S.session.length+" staged");
+}
+function moveSession(i, dir){
+  var j=i+dir; if(j<0 || j>=S.session.length) return;
+  var tmp=S.session[i]; S.session[i]=S.session[j]; S.session[j]=tmp;
+  S.savedPlaylist=null; renderSession();
+}
+function removeSession(i){
+  if(!S.session[i]) return;
+  var gone=S.session.splice(i,1)[0];
+  S.savedPlaylist=null; renderSession();
+  toast("Removed “"+gone.t+"” — "+S.session.length+" staged");
+}
+function clearSession(){
+  S.session=[]; S.savedPlaylist=null; S.pendingSave=null; setSessionStatus("", "");
+  if(S.contextAlbum && S.contextAlbum.isSession){ S.contextAlbum=null; renderTracks(); }
+  renderSession(); toast("New playlist cleared");
+}
+function setSessionStatus(html, kind){
+  S.sessionStatusHtml=html||""; S.sessionStatusKind=kind||"";
+  var st=$("sessionStatus");
+  if(st){ st.innerHTML=S.sessionStatusHtml; st.className="session-status"+(html ? " show "+(kind||"") : ""); }
+}
+function sessionErrorHtml(action){
+  var err=S.lastApiError, status=err ? err.status : 0, msg=err ? err.message : "";
+  if(status===403) return "<b>Spotify refused "+escHtml(action)+" (403"+(msg ? ": "+escHtml(msg) : "")+")</b>. One possible cause is a missing playlist permission: saving needs the <b>playlist-modify-private</b> scope, so if you connected before playlist saving was added, tap <b>Connect Spotify</b> → <b>Disconnect</b>, then log in again so Spotify grants it. Also make sure your account is on the app's user list in the Spotify dashboard (Development Mode).";
+  if(status===401) return "<b>Spotify rejected your login (401)</b> while "+escHtml(action)+", and an automatic refresh + retry didn't fix it. Tap <b>Connect Spotify</b> → <b>Re-connect Spotify</b> to log in again, then try saving again — your staged tracks are still here.";
+  if(status===429) return "<b>Spotify is rate-limiting right now (429)</b> while "+escHtml(action)+". Wait a few seconds and try again — your staged tracks are still here.";
+  if(status===0) return "<b>Couldn't reach Spotify</b> while "+escHtml(action)+". "+escHtml(msg || "Check your connection and that you're still logged in.")+" Your staged tracks are still here.";
+  return "<b>Spotify failed "+escHtml(action)+" ("+status+")</b>"+(msg ? " — "+escHtml(msg) : "")+". Your staged tracks are still here.";
+}
+function renderSession(){
+  var el=$("sessionPanel"); if(!el) return;
+  var nameEl=$("sessionName");
+  if(nameEl) S.sessionName=nameEl.value;
+  var html="";
+  if(!S.session.length){
+    html+='<p style="color:var(--muted);font-size:13px;line-height:1.55;margin:2px 0 0">Tap <b style="color:var(--text)">+</b> on any track — in an album tracklist or in track search — to stage it here. Mix tracks from different artists, reorder them, then <b style="color:var(--text)">play the session</b> in the app or <b style="color:var(--text)">save it to Spotify</b> as a real playlist in your account.</p>';
+  } else {
+    html+='<div class="list-actions"><span>'+S.session.length+' track'+(S.session.length===1?"":"s")+' staged</span><button type="button" onclick="clearSession()">Clear all</button></div>';
+    S.session.forEach(function(it,i){
+      html+='<div class="session-item"><span class="n">'+(i+1)+'</span><span style="min-width:0"><b>'+escHtml(it.t)+'</b><span>'+escHtml(it.artist)+(it.albumTitle ? " · "+escHtml(it.albumTitle) : "")+'</span></span><span class="dur">'+fmt(it.d)+'</span>'
+        +'<span class="sctl"><button type="button" onclick="moveSession('+i+',-1)" aria-label="Move '+escHtml(it.t)+' up">↑</button><button type="button" onclick="moveSession('+i+',1)" aria-label="Move '+escHtml(it.t)+' down">↓</button><button type="button" onclick="removeSession('+i+')" aria-label="Remove '+escHtml(it.t)+'">✕</button></span></div>';
+    });
+  }
+  html+='<input class="search" id="sessionName" type="text" style="margin-top:8px" placeholder="Playlist name — e.g. Saturday practice mix" value="'+escHtml(S.sessionName||"")+'" oninput="S.sessionName=this.value"/>';
+  html+='<div class="session-actions"><button type="button" class="btn green" onclick="playSession()">▶ Play session</button><button type="button" class="btn" id="saveSessionBtn" onclick="saveSessionToSpotify()">Save to Spotify</button></div>';
+  html+='<p class="session-note">Save creates a <b>private</b> playlist in your Spotify account with exactly these tracks, in this order. Connected before playlist saving existed? Disconnect and log in again so Spotify grants the new <code>playlist-modify-private</code> permission.</p>';
+  html+='<div class="session-status" id="sessionStatus" role="alert"></div>';
+  if(S.pendingSave){
+    html+='<div class="session-actions"><button type="button" class="btn" onclick="retrySaveTracks()">Retry adding tracks to “'+escHtml(S.pendingSave.name)+'”</button></div>';
+  }
+  if(S.savedPlaylist){
+    html+='<div class="session-actions"><button type="button" class="btn green" onclick="playSavedPlaylist()">▶ Play “'+escHtml(S.savedPlaylist.name)+'”</button><a class="btn" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center" href="https://open.spotify.com/playlist/'+encodeURIComponent(S.savedPlaylist.id)+'" target="_blank" rel="noopener">Open in Spotify ↗</a></div>';
+  }
+  el.innerHTML=html;
+  if(S.sessionStatusHtml){ var st=$("sessionStatus"); if(st){ st.innerHTML=S.sessionStatusHtml; st.className="session-status show "+(S.sessionStatusKind||""); } }
+}
+function sessionAsAlbum(){
+  var name=(S.sessionName||"").trim() || "New playlist";
+  return { title:name, artist:"Various artists", year:new Date().getFullYear(), hue:"#2e6f8e", init:"♪", isSession:true, spotifyUri:null, spotifyId:null,
+    tracks: S.session.map(function(it){ return { t:it.t, d:it.d, key:it.key, uri:it.uri, id:it.id, tab:it.tab, artist:it.artist, albumTitle:it.albumTitle }; }) };
+}
+async function spotifyPlaySessionAt(alb, offset){
+  var uris=alb.tracks.map(function(t){ return t.uri; });
+  return spotifyApi("PUT", "/me/player/play?device_id="+encodeURIComponent(S.deviceId), { uris:uris, offset:{ position: offset||0 } });
+}
+async function playSession(){
+  if(!S.session.length){ toast("Stage a track first — tap + on any track"); return; }
+  var missing=S.session.filter(function(it){ return S.live && !it.uri; }).length;
+  if(missing){ setSessionStatus("<b>"+missing+" staged track"+(missing===1?" has":"s have")+" no Spotify track to play</b> — it was staged in demo mode. Remove it, or re-add it from a live Spotify search, then play the session.", "err"); return; }
+  var alb=sessionAsAlbum();
+  S.contextAlbum=alb; S.track=0; S.progress=0; S.liveTrack=null;
+  if(S.live){
+    if(!S.deviceId){ S.contextAlbum=null; toast("Spotify player is still connecting — give it a second, then press Play session again"); return; }
+    renderTracks(); renderTab(false);
+    var ok=await spotifyPlaySessionAt(alb, 0);
+    if(ok===null){ setSessionStatus(sessionErrorHtml("starting the session"), "err"); return; }
+    setSessionStatus("", "");
+    toast("▶ Session “"+alb.title+"” — "+alb.tracks.length+" tracks, tabs follow each track");
+  } else {
+    renderTracks(); renderTab(true); setPlaying(true);
+    toast("▶ Session “"+alb.title+"” — "+alb.tracks.length+" demo tracks");
+  }
+  if(S.mode==="phone") closeLibrary();
+}
+/* Add tracks to a playlist. Spotify's Feb 2026 Web API changes REMOVED
+   POST /playlists/{id}/tracks for Development Mode apps — it answers
+   403 Forbidden even with the correct scope — and replaced it with
+   POST /playlists/{id}/items (same {uris:[...]} body, max 100 per call,
+   so longer sessions are sent in batches). */
+async function addTracksToPlaylist(playlistId, uris){
+  for(var i=0;i<uris.length;i+=100){
+    var batch=uris.slice(i, i+100);
+    var res=await spotifyApi("POST", "/playlists/"+encodeURIComponent(playlistId)+"/items", { uris:batch });
+    if(res===null) return null;
+  }
+  return true;
+}
+async function saveSessionToSpotify(){
+  if(!S.session.length){ setSessionStatus("<b>Nothing to save yet</b> — tap + on tracks to stage them here first.", "err"); return; }
+  if(!S.live){ setSessionStatus("<b>Connect Spotify to save</b> — saving creates a real playlist in your Spotify account, so it needs a live login. Your staged tracks stay here while you connect.", "err"); return; }
+  var name=(S.sessionName||"").trim();
+  if(!name){ setSessionStatus("<b>Give the playlist a name first</b> — type one in the name field above, then tap Save to Spotify again.", "err"); var ni=$("sessionName"); if(ni) ni.focus(); return; }
+  var missing=S.session.filter(function(it){ return !it.uri; }).length;
+  if(missing){ setSessionStatus("<b>"+missing+" staged track"+(missing===1?" has":"s have")+" no Spotify track ID</b> — it was staged in demo mode and can't be saved to Spotify. Remove it, or re-add it from a live Spotify search.", "err"); return; }
+  var btn=$("saveSessionBtn"); if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
+  setSessionStatus("Creating “"+escHtml(name)+"” in your Spotify account…", "");
+  var created=await spotifyApi("POST", "/me/playlists", { name:name, public:false, description:"Built in Tab Player — a play-along session mix." });
+  if(!created || !created.id){
+    setSessionStatus(sessionErrorHtml("creating the playlist"), "err");
+    if(btn){ btn.disabled=false; btn.textContent="Save to Spotify"; }
+    return;
+  }
+  var uris=S.session.map(function(it){ return it.uri; });
+  var added=await addTracksToPlaylist(created.id, uris);
+  if(added===null){
+    S.pendingSave={ id:created.id, uri:created.uri||("spotify:playlist:"+created.id), name:name };
+    S.savedPlaylist=null; renderSession();
+    setSessionStatus("<b>Playlist created, but adding the tracks failed.</b> “"+escHtml(name)+"” exists in your Spotify account (empty for now). "+sessionErrorHtml("adding tracks to the playlist")+" Use <b>Retry adding tracks</b> below once the cause is fixed.", "err");
+    return;
+  }
+  S.pendingSave=null;
+  S.savedPlaylist={ id:created.id, uri:created.uri||("spotify:playlist:"+created.id), name:name, tracks:sessionAsAlbum().tracks };
+  renderSession();
+  setSessionStatus("<b>Saved to Spotify ✓</b> — “"+escHtml(name)+"” was created as a <b>private</b> playlist in your account with "+uris.length+" track"+(uris.length===1?"":"s")+". Play it here or open it in Spotify below.", "ok");
+  toast("Saved “"+name+"” to your Spotify account ✓");
+}
+async function retrySaveTracks(){
+  if(!S.pendingSave) return;
+  var uris=S.session.map(function(it){ return it.uri; }).filter(Boolean);
+  if(!uris.length){ setSessionStatus("<b>Nothing to add</b> — the staged list is empty now.", "err"); return; }
+  var added=await addTracksToPlaylist(S.pendingSave.id, uris);
+  if(added===null){ setSessionStatus(sessionErrorHtml("adding tracks to the playlist"), "err"); return; }
+  S.savedPlaylist={ id:S.pendingSave.id, uri:S.pendingSave.uri, name:S.pendingSave.name, tracks:sessionAsAlbum().tracks };
+  var nm=S.pendingSave.name; S.pendingSave=null; renderSession();
+  setSessionStatus("<b>Tracks added ✓</b> — “"+escHtml(nm)+"” now has "+uris.length+" track"+(uris.length===1?"":"s")+" in your Spotify account.", "ok");
+}
+async function playSavedPlaylist(){
+  if(!S.savedPlaylist) return;
+  var sv=S.savedPlaylist;
+  S.contextAlbum={ title:sv.name, artist:"Your Spotify playlist", year:"", hue:"#2e6f8e", init:"♪", isPlaylist:true, spotifyUri:sv.uri, spotifyId:sv.id, tracks:sv.tracks||[] };
+  S.track=0; S.progress=0; S.liveTrack=null;
+  renderTracks();
+  if(S.live){
+    if(!S.deviceId){ toast("Spotify player is still connecting — give it a second, then try again"); return; }
+    var ok=await spotifyApi("PUT", "/me/player/play?device_id="+encodeURIComponent(S.deviceId), { context_uri:sv.uri });
+    if(ok===null){ setSessionStatus(sessionErrorHtml("starting the saved playlist"), "err"); return; }
+    toast("▶ “"+sv.name+"” — your saved Spotify playlist");
+  }
+  if(S.mode==="phone") closeLibrary();
+}
+
+function renderAlbums(){
+  var q=($("albumSearch").value||"").toLowerCase();
+  var list=activeAlbums();
+  var html="";
+  list.forEach(function(a,i){
+    if(!S.live && q && (a.title+" "+a.artist).toLowerCase().indexOf(q)===-1) return;
+    var cover = a.img ? '<img src="'+a.img+'" alt="" style="width:52px;height:52px;border-radius:8px;object-fit:cover;flex:none"/>' : '<span class="cover" style="background:'+a.hue+'">'+escHtml(a.init)+'</span>';
+    var meta;
+    if(a.isPlaylist){ meta = escHtml(a.artist)+(a.tracks.length ? ' · '+a.tracks.length+' tracks' : ' · Playlist · tap to load tracks'); }
+    else if(S.live){ meta = escHtml(a.artist)+(a.year ? ' · '+a.year : '')+' · '+a.tracks.length+' tracks'; }
+    else { meta = escHtml(a.artist)+' · '+a.year+' · '+a.tracks.length+' demo tracks included'; }
+    html+='<div class="result-wrap"><button class="album'+(i===S.album && !S.contextAlbum?" on":"")+'" onclick="selectAlbum('+i+')">'
+      +cover
+      +'<span><b>'+escHtml(a.title)+'</b><span>'+meta+'</span></span></button>'
+      +'<button type="button" class="add-btn" onclick="stageAllFromAlbum('+i+')" aria-label="Add all tracks from '+escHtml(a.title)+' to new playlist" title="Add whole album to new playlist">+</button></div>';
+  });
+  $("albumList").innerHTML = html || '<p style="color:var(--faint);font-size:13px;padding:6px">'+(S.live?(SEARCH_TYPES[S.searchType]?SEARCH_TYPES[S.searchType].emptyLive:'No albums found on Spotify for that search.'):'No albums match — connect Spotify to search all of Spotify.')+'</p>';
+}
+function renderTracks(){
+  var a=curAlbum(); if(!a) return;
+  $("tracklistTitle").textContent = a.isSession ? a.title+" — session queue" : (S.live ? a.title+" — tracklist" : a.title+" — demo tracklist (highlights; full album loads in live mode)");
+  var html="";
+  if(a.tracks.length && !a.isSession){
+    html+='<div class="list-actions"><span>'+a.tracks.length+' tracks · tap + to stage a track</span><button type="button" onclick="stageAllCurrent()">+ Add all to playlist</button></div>';
+  }
+  a.tracks.forEach(function(t,i){
+    var cls = i===S.track ? " on"+(S.playing?" playing":"") : "";
+    var sub = a.isSession && t.artist ? (t.artist+(t.albumTitle ? " · "+t.albumTitle : "")) : (t.key||"");
+    html+='<div class="track-row"><button class="track'+cls+'" onclick="selectTrack('+i+',true)">'
+      +'<span class="n">'+(i+1)+'</span><span class="eq"><i></i><i></i><i></i></span>'
+      +'<span><b>'+escHtml(t.t)+'</b><span>'+escHtml(sub)+'</span></span><span class="dur">'+fmt(t.d)+'</span></button>'
+      +(a.isSession ? '' : '<button type="button" class="add-btn" onclick="stageAlbumTrack('+i+')" aria-label="Add '+escHtml(t.t)+' to new playlist" title="Add to new playlist">+</button>')
+      +'</div>';
+  });
+  $("trackList").innerHTML=html;
+}
+function renderTab(announce){
+  S.ssSeq++; // invalidate any Songsterr lookup still in flight for a previous track
+  mtTeardown();
+  if(S.liveTrack){ renderLiveTab(announce); return; }
+  var a=curAlbum(), t=curTrack(); if(!a||!t) return;
+  var tArtist = t.artist || a.artist;
+  $("nowCover").textContent=a.init; $("nowCover").style.background=a.hue;
+  $("nowTitle").textContent=t.t;
+  $("nowArtist").textContent = a.isSession ? (tArtist+" · "+(t.albumTitle||a.title)) : (a.artist+" · "+a.title+(a.year ? " ("+a.year+")" : ""));
+  var typeName = S.inst==="Chords" ? "Chords" : S.inst+" Tab";
+  var res = resolveSource(tArtist, t.t);
+  if(res==="mt" || res==="mt-none"){
+    $("srcBadge").textContent = "My Tabs · "+typeName;
+    $("ratingBadge").textContent = res==="mt" ? "Downloaded tab · your private repo" : "No downloaded tab for this song yet";
+    $("lookupBadge").textContent = announce ? "Tab auto-loaded for “"+t.t+"”" : "Auto-loaded on track change";
+    var nxtM = a.tracks[S.track+1];
+    $("nextTitle").textContent = nxtM ? nxtM.t : (a.isSession ? "End of session" : "End of album");
+    $("nextArtist").textContent = nxtM ? (nxtM.artist || a.artist) : "Pick another album on the left";
+    $("tDur").textContent=fmt(t.d);
+    updateProgressUI();
+    renderTracks();
+    if(res==="mt") renderMyTabsPane(mtFindMatch(tArtist, t.t), tArtist, t.t);
+    else renderMyTabsEmptyPane(tArtist, t.t);
+    return;
+  }
+  markSourceChip(res);
+  var srcName = res==="ug" ? "Ultimate Guitar" : "Songsterr";
+  $("srcBadge").textContent = srcName+" · "+typeName;
+  $("ratingBadge").textContent = t.tab ? "Demo preview excerpt — full tab at source" : "Live on Spotify — full tab at source";
+  $("lookupBadge").textContent = announce ? "Tab auto-loaded for “"+t.t+"”" : "Auto-loaded on track change";
+  var nxt = a.tracks[S.track+1];
+  $("nextTitle").textContent = nxt ? nxt.t : (a.isSession ? "End of session" : "End of album");
+  $("nextArtist").textContent = nxt ? (nxt.artist || a.artist) : "Pick another album on the left";
+  $("tabHeadTitle").textContent = t.t+" — "+S.inst+(S.inst==="Chords"?" chords":" tab");
+  $("tabHeadMeta").textContent = tArtist+" · "+t.key+" · Demo preview excerpt in the style of a "+srcName+" "+typeName.toLowerCase()+" — open the full tab at the source for the complete, community-rated version";
+  var body="";
+  if(t.tab && t.tab.length){
+    // repeat the excerpt sections to give scroll room, labelled honestly as full-song structure
+    var reps = S.mode==="couch" ? 3 : 2;
+    var labels=[""," (repeat)"," — full song, continued"];
+    for(var r=0;r<reps;r++){
+      t.tab.forEach(function(sec){
+        body+='<div class="sect">'+sec[0]+labels[r]+'</div><pre>'+sec.slice(1).join("\n")+'</pre>';
+      });
+    }
+    body+='<div class="sect">Outro</div><pre>'+t.tab[t.tab.length-1].slice(1).join("\n")+'</pre>';
+  } else if(res==="ss"){
+    // Live Spotify track (album / playlist / session) — no bundled excerpt exists
+    // for it, so load the real tab in-app from Songsterr instead.
+    body=null; // the pane renders itself (async lookup) — don't overwrite it below
+    renderSongsterrPane(tArtist, t.t);
+  } else {
+    // Ultimate Guitar selected: UG tabs can't be embedded, so this is a link out.
+    var liveSrcUrl=ugURL();
+    body+='<div class="sect">From Spotify — full tab at the source</div>'
+      +'<p style="font-family:\'DM Sans\',sans-serif;font-size:15px;line-height:1.65;margin:4px 0 10px"><b>'+escHtml(t.t)+'</b> by '+escHtml(tArtist)+' came from your Spotify library, so there is no bundled demo excerpt for it. The full '+escHtml(typeName.toLowerCase())+' opens at '+srcName+':</p>'
+      +'<p style="margin:0 0 6px"><a href="'+liveSrcUrl+'" target="_blank" rel="noopener" style="display:inline-block;background:#1c1a14;color:#f7f4ec;font-weight:700;font-size:15px;text-decoration:none;border-radius:10px;padding:13px 20px">Open the '+escHtml(t.t)+' '+escHtml(typeName.toLowerCase())+' on '+srcName+' ↗</a></p>';
+  }
+  if(body!==null) $("tabBody").innerHTML=body;
+  $("openTabLink").href=ugURL();
+  $("openTabLink").textContent = res==="ug" ? "Open full tab on Ultimate Guitar ↗" : "Open in Songsterr ↗";
+  $("tabScroll").scrollTop=0;
+  $("tDur").textContent=fmt(t.d);
+  updateProgressUI();
+  renderTracks();
+}
+function renderLiveTab(announce){
+  S.ssSeq++; // invalidate any Songsterr lookup still in flight for a previous track
+  mtTeardown();
+  var lt=S.liveTrack;
+  $("nowCover").textContent=lt.init; $("nowCover").style.background=lt.hue;
+  $("nowTitle").textContent=lt.t;
+  $("nowArtist").textContent=lt.artist+" · "+lt.albumTitle;
+  var typeName = S.inst==="Chords" ? "Chords" : S.inst+" Tab";
+  var resL = resolveSource(lt.artist, lt.t);
+  if(resL==="mt" || resL==="mt-none"){
+    $("srcBadge").textContent = "My Tabs · "+typeName;
+    $("lookupBadge").textContent = announce ? "Tab auto-loaded for “"+lt.t+"”" : "Auto-loaded on track change";
+    $("nextTitle").textContent = lt.nextTitle || "—";
+    $("nextArtist").textContent = lt.nextTitle ? lt.artist : "";
+    $("ratingBadge").textContent = resL==="mt" ? "Live on Spotify · Downloaded tab from your repo" : "Live on Spotify · No downloaded tab for this song";
+    $("tDur").textContent=fmt(lt.d);
+    updateProgressUI();
+    renderTracks();
+    if(resL==="mt") renderMyTabsPane(mtFindMatch(lt.artist, lt.t), lt.artist, lt.t);
+    else renderMyTabsEmptyPane(lt.artist, lt.t);
+    return;
+  }
+  markSourceChip(resL);
+  var srcName = resL==="ug" ? "Ultimate Guitar" : "Songsterr";
+  $("srcBadge").textContent = srcName+" · "+typeName;
+  $("lookupBadge").textContent = announce ? "Tab auto-loaded for “"+lt.t+"”" : "Auto-loaded on track change";
+  $("nextTitle").textContent = lt.nextTitle || "—";
+  $("nextArtist").textContent = lt.nextTitle ? lt.artist : "";
+  if(resL==="ss"){
+    // Default live path: the tab itself loads in-app from Songsterr.
+    $("ratingBadge").textContent = "Live on Spotify · Tab by Songsterr";
+    renderSongsterrPane(lt.artist, lt.t);
+    $("tDur").textContent=fmt(lt.d);
+    updateProgressUI();
+    renderTracks();
+    return;
+  }
+  // Ultimate Guitar selected: UG can't be embedded, so the pane links out.
+  $("ratingBadge").textContent = "Live on Spotify — full tab at source";
+  $("tabHeadTitle").textContent = lt.t+" — "+S.inst+(S.inst==="Chords"?" chords":" tab");
+  $("tabHeadMeta").textContent = lt.artist+" · Now playing live on Spotify · Looked up on "+srcName+" — the full, community-rated "+typeName.toLowerCase()+" opens at the source";
+  var q=encodeURIComponent(lt.artist+" "+lt.t);
+  var srcUrl = "https://www.ultimate-guitar.com/search.php?search_type=title&value="+q;
+  $("tabBody").innerHTML =
+    '<div class="sect">Now playing — live from Spotify</div>'
+    +'<p style="font-family:\'DM Sans\',sans-serif;font-size:15px;line-height:1.65;margin:4px 0 10px"><b>'+escHtml(lt.t)+'</b> by '+escHtml(lt.artist)+' is playing now, and this pane swapped to it automatically on the track change — exactly the flow you asked for.</p>'
+    +'<p style="font-family:\'DM Sans\',sans-serif;font-size:15px;line-height:1.65;margin:0 0 10px">Ultimate Guitar doesn\'t allow its tabs to be embedded in other apps, so with UG selected the full '+escHtml(typeName.toLowerCase())+' for this exact song lives one tap away — or switch the tab source above to <b>Songsterr</b> and the tab loads right here instead:</p>'
+    +'<p style="margin:0 0 6px"><a href="'+srcUrl+'" target="_blank" rel="noopener" style="display:inline-block;background:#1c1a14;color:#f7f4ec;font-weight:700;font-size:15px;text-decoration:none;border-radius:10px;padding:13px 20px">Open the '+escHtml(lt.t)+' '+escHtml(typeName.toLowerCase())+' on Ultimate Guitar ↗</a></p>'
+    +'<div class="sect">While it plays</div>'
+    +'<p style="font-family:\'DM Sans\',sans-serif;font-size:15px;line-height:1.65;margin:4px 0 0">When Spotify moves to the next track, this lookup updates on its own — no searching track by track.</p>';
+  $("openTabLink").href=srcUrl;
+  $("openTabLink").textContent = "Open full tab on Ultimate Guitar ↗";
+  $("tabScroll").scrollTop=0;
+  $("tDur").textContent=fmt(lt.d);
+  updateProgressUI();
+  renderTracks();
+}
+function curDuration(){ return S.liveTrack ? S.liveTrack.d : (curTrack()?curTrack().d:0); }
+function updateProgressUI(){
+  var d=curDuration();
+  $("tCur").textContent=fmt(S.progress);
+  $("progressFill").style.width=(d? (S.progress/d*100):0)+"%";
+}
+
+/* ================= PLAYBACK =================
+   Live mode: the Spotify Web Playback SDK is the engine — its
+   player_state_changed events drive progress, track changes and tab swaps.
+   Demo mode: the simulated engine below reproduces the same flow. */
+function loadContextTracks(a){
+  return a && a.isPlaylist ? loadSpotifyPlaylistTracks(a) : loadSpotifyAlbumTracks(a);
+}
+/* After an album is tapped, jump the sidebar down to its tracklist — that's
+   where the tracks, their + buttons and “+ Add all to playlist” live. */
+function jumpToTracklist(){
+  var el=$("tracklistTitle"); if(!el) return;
+  setTimeout(function(){ try{ el.scrollIntoView({ behavior:"smooth", block:"start" }); }catch(e){ el.scrollIntoView(); } }, 40);
+}
+function selectAlbum(i){
+  S.album=i; S.track=0; S.progress=0; S.liveTrack=null; S.contextAlbum=null;
+  renderAlbums();
+  renderTab(true);
+  jumpToTracklist();
+  var a=curAlbum();
+  if(S.live && a && a.spotifyUri && !a.tracks.length){ loadContextTracks(a).then(function(){ renderAlbums(); renderTracks(); renderTab(false); jumpToTracklist(); }); }
+  if(a) toast(a.title+" — tracklist below, tap a track to play or + Add all to stage the album");
+}
+function selectTrack(i, autoplay){
+  var a=curAlbum(); if(!a) return;
+  if(a.isSession){
+    S.track=i; S.progress=0; S.liveTrack=null; renderTab(true);
+    if(autoplay){
+      if(S.live){ if(S.deviceId) spotifyPlaySessionAt(a, i); else toast("Spotify player is still connecting — give it a second, then tap the track again"); }
+      else setPlaying(true);
+    }
+    if(S.mode==="phone") closeLibrary();
+    return;
+  }
+  if(S.live && a.spotifyUri){
+    if(!a.tracks.length){ loadContextTracks(a).then(function(){ selectTrack(i, autoplay); }); return; }
+    S.track=i; S.progress=0; S.liveTrack=null; renderTab(true);
+    if(autoplay) spotifyPlayAlbum(a, i);
+    if(S.mode==="phone") closeLibrary();
+    return;
+  }
+  S.track=i; S.progress=0; if(autoplay) setPlaying(true); renderTab(true); if(S.mode==="phone") closeLibrary();
+}
+function setPlaying(p){
+  S.playing=p;
+  $("playBtn").textContent = p ? "⏸" : "▶";
+  renderTracks();
+  manageWakeLock();
+}
+function togglePlay(){
+  if(S.live && S.spotifyPlayer){
+    if(S.spotifyReady){ S.spotifyPlayer.togglePlay(); }
+    else { var a=curAlbum(); if(a && a.isSession){ if(S.deviceId) spotifyPlaySessionAt(a, S.track); } else if(a && a.spotifyUri) spotifyPlayAlbum(a, S.track); }
+    return;
+  }
+  setPlaying(!S.playing); if(S.playing) toast("▶ "+curTrack().t+" — tab is scrolling with the track");
+}
+function nextTrack(manual){
+  if(S.live && S.spotifyPlayer && S.spotifyReady){ S.spotifyPlayer.nextTrack(); return; }
+  var a=curAlbum();
+  if(S.track < a.tracks.length-1){ S.track++; S.progress=0; renderTab(true); if(manual) toast("Next: "+curTrack().t+" — tab swapped automatically"); }
+  else { setPlaying(false); S.progress=0; updateProgressUI(); toast("Album finished 🎉 Pick another album to keep playing"); }
+}
+function prevTrack(){
+  if(S.live && S.spotifyPlayer && S.spotifyReady){ S.spotifyPlayer.previousTrack(); return; }
+  if(S.progress>4 || S.track===0){ S.progress=0; updateProgressUI(); $("tabScroll").scrollTop=0; } else { S.track--; S.progress=0; renderTab(true); }
+}
+function restartTrack(){
+  if(S.live && S.spotifyPlayer && S.spotifyReady){ spotifyApi("PUT","/me/player/seek?position_ms=0&device_id="+encodeURIComponent(S.deviceId)); S.progress=0; updateProgressUI(); $("tabScroll").scrollTop=0; return; }
+  S.progress=0; updateProgressUI(); $("tabScroll").scrollTop=0;
+}
+
+setInterval(function(){
+  if(!S.playing) return;
+  var d=curDuration(); if(!d) return;
+  if(!(S.live && S.spotifyPlayer)){ // demo engine advances the clock; live progress comes from the SDK
+    S.progress += 0.25;
+    if(S.progress >= d){ nextTrack(false); return; }
+  }
+  updateProgressUI();
+  if(MT.api && MT.path){ try{ MT.api.timePosition = Math.floor(S.progress*1000); }catch(e){} } // drive alphaTab's marker from Spotify progress (its own player is off)
+  if($("autoScroll").checked && !$("tabBody").querySelector(".ss-frame")){ // an embedded Songsterr player scrolls itself — don't scroll it away
+    var sc=$("tabScroll");
+    var max=sc.scrollHeight - sc.clientHeight;
+    if(max>0){
+      var speed=parseInt($("speed").value,10)/100;
+      var target=(S.progress/d)*max*Math.min(speed,1.6);
+      sc.scrollTop = target;
+    }
+  }
+},250);
+
+$("progressBar").addEventListener("click", function(e){
+  var r=this.getBoundingClientRect();
+  var frac=(e.clientX-r.left)/r.width;
+  var d=curDuration(); if(!d) return;
+  S.progress=Math.floor(d*Math.min(Math.max(frac,0),1));
+  if(S.live && S.spotifyPlayer && S.spotifyReady){ spotifyApi("PUT","/me/player/seek?position_ms="+Math.floor(S.progress*1000)+"&device_id="+encodeURIComponent(S.deviceId)); }
+  updateProgressUI();
+  var sc=$("tabScroll"); var max=sc.scrollHeight-sc.clientHeight;
+  if(max>0 && $("autoScroll").checked) sc.scrollTop=(S.progress/d)*max;
+});
+
+/* ================= MODE / SETTINGS ================= */
+function setTabSize(v){ document.documentElement.style.setProperty("--tab-size", (S.mode==="couch"? Math.max(19,v):v)+"px"); if(S.mode!=="couch") document.body.style.setProperty("--tab-size", v+"px"); document.querySelector(".tabcard").style.setProperty("--x",v); document.documentElement.style.setProperty("--tab-size", v+"px"); }
+function setInst(btn){
+  document.querySelectorAll(".pills button").forEach(function(b){ b.classList.remove("on"); });
+  btn.classList.add("on"); S.inst=btn.getAttribute("data-inst");
+  renderTab(true); toast(S.inst+" tabs — new lookups will default to "+S.inst.toLowerCase());
+}
+function setSource(s){
+  S.source=s;
+  S.sourceKey=currentTrackKeyForSource();
+  markSourceChip(s);
+  renderTab(false);
+  toast(s==="ug" ? "Ultimate Guitar selected — its tabs open in the UG site/app (they can't be embedded)" : (s==="mt" ? "My Tabs selected — downloaded tabs from your private repo, rendered right here" : "Songsterr selected — full tabs load right here in the app"));
+}
+function toggleLibrary(){
+  var open=document.body.classList.toggle("show-library");
+  var btn=$("libraryToggle"); if(btn) btn.setAttribute("aria-expanded", open?"true":"false");
+}
+function closeLibrary(){
+  document.body.classList.remove("show-library");
+  var btn=$("libraryToggle"); if(btn) btn.setAttribute("aria-expanded","false");
+}
+function setMode(m){
+  S.mode=m;
+  document.body.classList.toggle("couch", m==="couch");
+  document.body.classList.toggle("phone", m==="phone");
+  if(m!=="phone") closeLibrary();
+  $("modeDesk").classList.toggle("on", m==="desk");
+  $("modePhone").classList.toggle("on", m==="phone");
+  $("modeCouch").classList.toggle("on", m==="couch");
+  document.documentElement.style.setProperty("--tab-size", m==="couch" ? "21px" : (m==="phone" ? "16px" : "14.5px"));
+  renderTab(false);
+  manageWakeLock();
+  toast(m==="couch" ? "Couch / TV mode — big type, auto-scroll, screen stays awake. Screencast this tab to your TV." : (m==="phone" ? "Phone mode — play controls are up top, clear of the bottom bar. Tap “Browse & tracks” to pick a song." : "Desk mode"));
+}
+async function manageWakeLock(){
+  var want = S.mode==="couch" && S.playing;
+  try{
+    if(want && "wakeLock" in navigator){ S.wakeLock = await navigator.wakeLock.request("screen"); }
+    else if(S.wakeLock){ await S.wakeLock.release(); S.wakeLock=null; }
+  }catch(e){ /* wake lock unavailable — non-fatal */ }
+  var on = !!(S.wakeLock) || want;
+  $("wakeStatus").textContent = "Screen awake: " + (S.mode==="couch" ? (want? "on (while playing)":"on in Couch mode") : "off");
+  $("wakeStatus").classList.toggle("off", S.mode!=="couch");
+  if(S.mode==="couch" && "wakeLock" in navigator && !S.wakeLock){ try{ S.wakeLock=await navigator.wakeLock.request("screen"); }catch(e){} }
+}
+document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="visible" && S.mode==="couch") manageWakeLock(); });
+
+/* ================= SPOTIFY — PKCE LOGIN + WEB PLAYBACK SDK ================= */
+var SPOTIFY_DEFAULT_CLIENT_ID = "bc97def315cc484789d0389cff969ebf";
+var SPOTIFY_SCOPES = "streaming user-read-playback-state user-modify-playback-state user-read-email user-read-private playlist-modify-private";
+var AUTH_KEY = "stp_spotify_auth";       // sessionStorage: access/refresh token + expiry (tab session only)
+var VERIFIER_KEY = "stp_pkce_verifier";  // sessionStorage: one-time PKCE verifier for the login round-trip
+var CLIENT_KEY = "stp_spotify_client_id";
+
+function spotifyClientId(){
+  var v = ($("clientId") && $("clientId").value.trim()) || "";
+  if(v) return v;
+  try{ v = sessionStorage.getItem(CLIENT_KEY) || ""; }catch(e){}
+  return v || SPOTIFY_DEFAULT_CLIENT_ID;
+}
+function spotifyRedirectUri(){
+  // Spotify requires an exact match with the URI registered in the app.
+  // For this page that is its own address, without any query string or hash.
+  return window.location.href.split("#")[0].split("?")[0];
+}
+function openConnect(){
+  $("overlay").classList.add("open");
+  $("redirectUriBox").textContent = spotifyRedirectUri();
+  updateConnectUI();
+}
+function closeConnect(){ $("overlay").classList.remove("open"); }
+function updateConnectUI(){
+  var auth=loadAuth();
+  var loggedIn = !!(auth && auth.access_token);
+  $("logoutBtn").style.display = loggedIn ? "" : "none";
+  $("loginBtn").textContent = loggedIn ? "Re-connect Spotify" : "Log in with Spotify";
+  $("connectStatus").innerHTML = loggedIn
+    ? "You're <b style='color:var(--text)'>logged in to Spotify</b>. This page is a Spotify Connect device named <b style='color:var(--text)'>“Tab Player”</b> — press play here, pick an album, and the tab follows every track change. Search on the left now searches all of Spotify by album, artist, track or playlist."
+    : "Your Client ID is saved in this page. Log in with your <b style='color:var(--text)'>Spotify Premium</b> account and this page becomes a Spotify Connect device named <b style='color:var(--text)'>“Tab Player”</b> — press play here, or pick “Tab Player” in Spotify on your phone/computer.";
+}
+function loadAuth(){ try{ var raw=sessionStorage.getItem(AUTH_KEY); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
+function saveAuth(a){ try{ if(a) sessionStorage.setItem(AUTH_KEY, JSON.stringify(a)); else sessionStorage.removeItem(AUTH_KEY); }catch(e){} }
+function b64url(bytes){
+  var bin=""; bytes.forEach(function(b){ bin+=String.fromCharCode(b); });
+  return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function randomVerifier(){
+  var arr=new Uint8Array(48); crypto.getRandomValues(arr); return b64url(arr);
+}
+async function sha256B64url(text){
+  var digest=await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return b64url(new Uint8Array(digest));
+}
+async function startSpotifyLogin(){
+  var cid=spotifyClientId();
+  if(!cid || cid.length<20){ $("connectMsg").textContent="Add your Spotify Client ID above first — it's the long string from your app on developer.spotify.com."; return; }
+  try{ sessionStorage.setItem(CLIENT_KEY, cid); }catch(e){}
+  var verifier=randomVerifier();
+  try{ sessionStorage.setItem(VERIFIER_KEY, verifier); }catch(e){}
+  var challenge=await sha256B64url(verifier);
+  var params=new URLSearchParams({
+    client_id: cid,
+    response_type: "code",
+    redirect_uri: spotifyRedirectUri(),
+    scope: SPOTIFY_SCOPES,
+    code_challenge_method: "S256",
+    code_challenge: challenge
+  });
+  window.location.href = "https://accounts.spotify.com/authorize?" + params.toString();
+}
+async function exchangeSpotifyCode(code){
+  var verifier=null;
+  try{ verifier=sessionStorage.getItem(VERIFIER_KEY); }catch(e){}
+  if(!verifier) throw new Error("missing_verifier");
+  var body=new URLSearchParams({
+    client_id: spotifyClientId(),
+    grant_type: "authorization_code",
+    code: code,
+    redirect_uri: spotifyRedirectUri(),
+    code_verifier: verifier
+  });
+  var res=await fetch("https://accounts.spotify.com/api/token", { method:"POST", headers:{ "Content-Type":"application/x-www-form-urlencoded" }, body: body.toString() });
+  var data=await res.json();
+  if(!res.ok || !data.access_token) throw new Error((data && (data.error_description||data.error)) || "token_exchange_failed");
+  try{ sessionStorage.removeItem(VERIFIER_KEY); }catch(e){}
+  var auth={ access_token:data.access_token, refresh_token:data.refresh_token||null, expires_at:Date.now()+(data.expires_in||3600)*1000 };
+  saveAuth(auth);
+  return auth;
+}
+async function refreshSpotifyToken(){
+  var auth=loadAuth();
+  if(!auth || !auth.refresh_token) return null;
+  var body=new URLSearchParams({ client_id: spotifyClientId(), grant_type:"refresh_token", refresh_token:auth.refresh_token });
+  try{
+    var res=await fetch("https://accounts.spotify.com/api/token", { method:"POST", headers:{ "Content-Type":"application/x-www-form-urlencoded" }, body: body.toString() });
+    var data=await res.json();
+    if(!res.ok || !data.access_token) return null;
+    auth.access_token=data.access_token;
+    if(data.refresh_token) auth.refresh_token=data.refresh_token;
+    auth.expires_at=Date.now()+(data.expires_in||3600)*1000;
+    saveAuth(auth);
+    return auth;
+  }catch(e){ return null; }
+}
+async function validSpotifyToken(){
+  var auth=loadAuth();
+  if(!auth || !auth.access_token) return null;
+  if(auth.expires_at && Date.now() > auth.expires_at - 60000){
+    var refreshed=await refreshSpotifyToken();
+    return refreshed ? refreshed.access_token : null;
+  }
+  return auth.access_token;
+}
+function spotifyLogout(){
+  saveAuth(null);
+  try{ sessionStorage.removeItem(VERIFIER_KEY); }catch(e){}
+  if(S.spotifyPlayer){ try{ S.spotifyPlayer.disconnect(); }catch(e){} S.spotifyPlayer=null; S.spotifyReady=false; S.deviceId=null; }
+  S.live=false; S.albums=null; S.liveTrack=null; S.lastSpotifyTrackId=null; S.album=0; S.track=0; S.progress=0; S.searchResults=null; S.browseArtist=null; S.contextAlbum=null; S.savedPlaylist=null; S.pendingSave=null;
+  setPlaying(false);
+  $("modeBadge").textContent="DEMO MODE"; $("modeBadge").style.background="";
+  $("connectBtn").textContent="Connect Spotify";
+  showSearchStatus("");
+  updateBrowseUI(); renderSearchResults(); renderSession(); renderTab(false); updateConnectUI();
+  $("connectMsg").textContent="Disconnected — you're back in demo mode. Any tracks you staged in New playlist are still listed; saving needs a live login (with the playlist-modify-private permission).";
+  toast("Spotify disconnected — demo mode");
+}
+/* One raw Web API call. Returns {ok:true,data} on success, or
+   {ok:false,status,message} with Spotify's real status + error text kept —
+   callers decide how to present it instead of everything collapsing to null. */
+async function spotifyFetchOnce(token, method, path, bodyObj){
+  var opts={ method:method, headers:{ "Authorization":"Bearer "+token } };
+  if(bodyObj){ opts.headers["Content-Type"]="application/json"; opts.body=JSON.stringify(bodyObj); }
+  var res=await fetch("https://api.spotify.com/v1"+path, opts);
+  if(res.status===204) return { ok:true, status:204, data:true };
+  var data=null;
+  try{ data=await res.json(); }catch(e){}
+  if(!res.ok){
+    var msg="";
+    if(data && data.error) msg = (typeof data.error==="string") ? data.error : (data.error.message || "");
+    return { ok:false, status:res.status, message: msg || ("HTTP "+res.status) };
+  }
+  return { ok:true, status:res.status, data:(data===null ? true : data) };
+}
+/* Web API wrapper used across the app. On failure it records the real cause in
+   S.lastApiError ({status, message}; status 0 = no session / network failure)
+   and returns null, as before. A 401 gets one forced token refresh + retry:
+   the stored expiry can look fine while Spotify has already rejected the
+   token, and playback working via the SDK doesn't prove API calls succeed. */
+async function spotifyApi(method, path, bodyObj){
+  var token=await validSpotifyToken();
+  if(!token){ S.lastApiError={ status:0, message:"No Spotify login session — tap Connect Spotify and log in first." }; return null; }
+  var r;
+  try{ r=await spotifyFetchOnce(token, method, path, bodyObj); }
+  catch(e){ S.lastApiError={ status:0, message:"Couldn't reach Spotify ("+((e && e.message) || "network error")+"). Check your connection." }; return null; }
+  if(!r.ok && r.status===401){
+    var refreshed=await refreshSpotifyToken();
+    if(refreshed && refreshed.access_token){
+      try{ r=await spotifyFetchOnce(refreshed.access_token, method, path, bodyObj); }
+      catch(e){ S.lastApiError={ status:0, message:"Couldn't reach Spotify on the retry after refreshing your login." }; return null; }
+    }
+  }
+  if(!r.ok){ S.lastApiError={ status:r.status, message:r.message }; return null; }
+  S.lastApiError=null;
+  return r.data;
+}
+function hueFromString(s){ var h=0; for(var i=0;i<s.length;i++){ h=(h*31 + s.charCodeAt(i))%360; } return "hsl("+h+",42%,34%)"; }
+function initialsOf(name){ return name.split(/\s+/).map(function(w){ return w.charAt(0); }).join("").slice(0,2).toUpperCase() || "♪"; }
+function mapSpotifyAlbum(item, tracks){
+  return {
+    title:item.name, artist:(item.artists||[]).map(function(a){ return a.name; }).join(", ") || "Unknown artist",
+    year:item.release_date ? parseInt(item.release_date.slice(0,4),10) : "", hue:hueFromString(item.name), init:initialsOf(item.name),
+    img:(item.images && item.images.length) ? (item.images[1]||item.images[0]).url : null,
+    spotifyUri:item.uri, spotifyId:item.id,
+    tracks: tracks || []
+  };
+}
+function mapSpotifyTrack(t){
+  return { t:t.name, d:Math.round((t.duration_ms||0)/1000), key:"Track "+(t.track_number||""), uri:t.uri, id:t.id };
+}
+function mapSpotifyArtist(item){
+  return {
+    id:item.id, name:item.name, uri:item.uri,
+    img:(item.images && item.images.length) ? (item.images[1]||item.images[0]).url : null,
+    hue:hueFromString(item.name), init:initialsOf(item.name),
+    genres:(item.genres||[]).slice(0,2).join(", "),
+    followers: item.followers && item.followers.total ? (item.followers.total>=1000 ? Math.round(item.followers.total/1000)+"k followers" : item.followers.total+" followers") : ""
+  };
+}
+function mapSearchTrack(item){
+  return {
+    id:item.id, uri:item.uri, t:item.name, d:Math.round((item.duration_ms||0)/1000),
+    artist:(item.artists||[]).map(function(a){ return a.name; }).join(", ") || "Unknown artist",
+    albumTitle: item.album ? item.album.name : "", albumId: item.album ? item.album.id : null, albumUri: item.album ? item.album.uri : null,
+    img:(item.album && item.album.images && item.album.images.length) ? (item.album.images[1]||item.album.images[0]).url : null,
+    hue:hueFromString(item.name), init:initialsOf(item.name)
+  };
+}
+function mapSpotifyPlaylist(item){
+  if(!item) return null;
+  var owner = item.owner ? (item.owner.display_name || item.owner.id || "") : "";
+  var total = item.tracks && typeof item.tracks.total==="number" ? item.tracks.total : (item.items && typeof item.items.total==="number" ? item.items.total : null);
+  return {
+    id:item.id, name:item.name, uri:item.uri, owner:owner,
+    img:(item.images && item.images.length) ? (item.images[0]).url : null,
+    hue:hueFromString(item.name), init:initialsOf(item.name),
+    meta: (owner ? "by "+owner : "Playlist") + (total!==null ? " · "+total+" tracks" : "")
+  };
+}
+function mapPlaylistAsAlbum(pl){
+  return {
+    title:pl.name, artist: pl.owner ? ("Playlist by "+pl.owner) : "Playlist", year:"", hue:pl.hue, init:pl.init, img:pl.img,
+    spotifyUri:pl.uri, spotifyId:pl.id, isPlaylist:true, tracks:[]
+  };
+}
+function showSearchStatus(html){
+  var el=$("searchStatus"); if(!el) return;
+  if(html){ el.innerHTML=html; el.classList.add("show"); }
+  else { el.innerHTML=""; el.classList.remove("show"); }
+}
+/* Persistent, specific search error — stays in the album area until the next
+   successful search, instead of a toast that vanishes in ~3 seconds. */
+function searchErrorHtml(err){
+  var status=err ? err.status : 0, msg=err ? err.message : "";
+  var keep=' <span class="keep">The results below are the previous list, not results for this search.</span>';
+  if(status===401) return "<b>Spotify rejected your login (401)</b> — the access token was refused, and an automatic refresh + retry didn't fix it. Tap <b>Connect Spotify</b> → <b>Re-connect Spotify</b> to log in again, then search again."+keep;
+  if(status===403) return "<b>Spotify refused the search (403"+(msg ? ": "+escHtml(msg) : "")+")</b> — this is the classic Development Mode restriction. In the Spotify dashboard (developer.spotify.com → your app → Settings → User Management), make sure your own Spotify account is on the app's user list, and that the <b>Web API</b> is enabled for the app."+keep;
+  if(status===429) return "<b>Spotify is rate-limiting search right now (429).</b> Wait a few seconds, then keep typing — the search runs again automatically."+keep;
+  if(status===0) return "<b>Search couldn't reach Spotify.</b> "+escHtml(msg || "Check your connection and that you're still logged in.")+keep;
+  return "<b>Spotify search failed ("+status+")</b>"+(msg ? " — "+escHtml(msg) : "")+"."+keep;
+}
+async function searchSpotify(){
+  var q=($("albumSearch").value||"").trim();
+  var type=S.searchType||"album";
+  var seq=++S.searchSeq;
+  if(!q){ S.albums=null; S.searchResults=null; S.album=0; S.track=0; S.liveTrack=null; showSearchStatus(""); renderAlbums(); if(curAlbum()) renderTab(false); return; }
+  // Spotify's Feb 2026 Dev Mode cap: /search limit max is 10 — keep it at 10 for every type
+  var data=await spotifyApi("GET", "/search?type="+encodeURIComponent(type)+"&limit=10&q="+encodeURIComponent(q));
+  if(seq!==S.searchSeq) return; // a newer keystroke already superseded this search — don't let a stale failure land
+  var bucket = data ? data[type+"s"] : null;
+  if(!data || !bucket){ showSearchStatus(searchErrorHtml(S.lastApiError)); return; }
+  showSearchStatus("");
+  S.liveTrack=null;
+  if(type==="album"){
+    S.searchResults=null;
+    S.albums=bucket.items.map(function(item){ return mapSpotifyAlbum(item); });
+    S.album=0; S.track=0;
+    renderAlbums();
+    if(S.albums.length){ loadSpotifyAlbumTracks(S.albums[0]).then(function(){ renderTracks(); renderTab(false); }); }
+    else renderTracks();
+  } else if(type==="artist"){
+    S.searchResults={ type:"artist", items: bucket.items.map(mapSpotifyArtist) };
+    renderArtistResults();
+  } else if(type==="track"){
+    S.searchResults={ type:"track", items: bucket.items.map(mapSearchTrack) };
+    renderTrackResults();
+  } else if(type==="playlist"){
+    S.searchResults={ type:"playlist", items: bucket.items.map(mapSpotifyPlaylist).filter(Boolean) };
+    renderPlaylistResults();
+  }
+}
+/* Backwards-compatible alias — older call sites used this name */
+async function searchSpotifyAlbums(){ return searchSpotify(); }
+async function browseArtist(i){
+  var list=S.searchResults && S.searchResults.type==="artist" ? S.searchResults.items : null;
+  if(!list || !list[i]) return;
+  var artist=list[i];
+  S.contextAlbum=null;
+  S.browseArtist={ name:artist.name, id:artist.id };
+  updateBrowseUI();
+  var seq=++S.searchSeq;
+  var data=await spotifyApi("GET", "/artists/"+encodeURIComponent(artist.id)+"/albums?include_groups=album,single&limit=10");
+  if(seq!==S.searchSeq && !S.browseArtist) return;
+  if(!data || !data.items){ showSearchStatus(searchErrorHtml(S.lastApiError)); return; }
+  showSearchStatus("");
+  // De-duplicate near-identical album/single entries by name
+  var seen={}, albums=[];
+  data.items.forEach(function(item){ var k=(item.name||"").toLowerCase(); if(seen[k]) return; seen[k]=1; albums.push(mapSpotifyAlbum(item)); });
+  S.albums=albums; S.album=0; S.track=0; S.liveTrack=null;
+  renderAlbums();
+  if(S.albums.length){ loadSpotifyAlbumTracks(S.albums[0]).then(function(){ renderTracks(); renderTab(false); }); }
+  else { renderTracks(); toast("No albums found for "+artist.name); }
+  if(S.mode==="phone"){ /* keep library open so the albums are visible */ document.body.classList.add("show-library"); }
+}
+async function playSearchTrack(i){
+  var list=S.searchResults && S.searchResults.type==="track" ? S.searchResults.items : null;
+  if(!list || !list[i]) return;
+  var tr=list[i];
+  S.contextAlbum=null;
+  if(!S.deviceId){ toast("Spotify player is still connecting — give it a second, then tap the track again"); return; }
+  // Load the track's album into the sidebar tracklist so tabs / next-up have context
+  if(tr.albumId){
+    var albumData=await spotifyApi("GET", "/albums/"+encodeURIComponent(tr.albumId));
+    if(albumData){
+      var alb=mapSpotifyAlbum(albumData);
+      await loadSpotifyAlbumTracks(alb);
+      var pos=0; alb.tracks.forEach(function(t,idx){ if(t.id===tr.id) pos=idx; });
+      S.albums=[alb]; S.album=0; S.track=pos;
+    }
+  }
+  var ok=await spotifyApi("PUT", "/me/player/play?device_id="+encodeURIComponent(S.deviceId), { uris:[tr.uri] });
+  if(ok===null){ toast("Spotify wouldn't play that track — make sure your account is Premium and try again"); return; }
+  renderAlbums(); renderTracks();
+  toast("▶ "+tr.t+" — "+tr.artist);
+  if(S.mode==="phone") closeLibrary();
+}
+function openSearchPlaylist(i){
+  var list=S.searchResults && S.searchResults.type==="playlist" ? S.searchResults.items : null;
+  if(!list || !list[i]) return;
+  var alb=mapPlaylistAsAlbum(list[i]);
+  S.albums=[alb]; S.album=0; S.track=0; S.liveTrack=null; S.browseArtist=null; S.contextAlbum=null;
+  // Switch the visible list to the playlist-as-album view, then load its tracks
+  S.searchType="album";
+  document.querySelectorAll(".type-seg button").forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-stype")==="album"); });
+  updateBrowseUI();
+  renderAlbums(); renderTab(false);
+  loadSpotifyPlaylistTracks(alb).then(function(){ renderAlbums(); renderTracks(); renderTab(false); jumpToTracklist(); toast(alb.title+" — "+alb.tracks.length+" tracks loaded, tap a track to play"); });
+}
+async function loadSpotifyAlbumTracks(album){
+  if(!album || !album.spotifyId || album.tracks.length) return album;
+  var data=await spotifyApi("GET", "/albums/"+album.spotifyId+"/tracks?limit=50");
+  if(data && data.items) album.tracks=data.items.map(mapSpotifyTrack);
+  return album;
+}
+async function loadSpotifyPlaylistTracks(album){
+  if(!album || !album.spotifyId || album.tracks.length) return album;
+  // Feb 2026 rename: GET /playlists/{id}/tracks was removed (403) in favour of
+  // /items, and each entry now carries the track under `item`, not `track`.
+  // The endpoint only serves playlists the user owns or collaborates on.
+  var data=await spotifyApi("GET", "/playlists/"+encodeURIComponent(album.spotifyId)+"/items?limit=50");
+  if(data && data.items){
+    album.tracks=data.items.map(function(it){ return it ? (it.item || it.track) : null; }).filter(function(t){ return t && t.name && t.uri; }).map(function(t){
+      var mapped=mapSpotifyTrack(t);
+      mapped.key=(t.artists||[]).map(function(a){ return a.name; }).join(", ");
+      return mapped;
+    });
+  } else if(S.lastApiError){
+    if(S.lastApiError.status===403) showSearchStatus("<b>Spotify won't show this playlist's tracks (403).</b> Under the current Development Mode rules, the app can only read the tracks of playlists you own or collaborate on — playlists you created (including ones saved from this app) open fine.");
+    else showSearchStatus(searchErrorHtml(S.lastApiError));
+  }
+  return album;
+}
+async function spotifyPlayAlbum(album, offset){
+  if(!S.deviceId){ toast("Spotify player is still connecting — give it a second, then press play again"); return; }
+  await loadContextTracks(album);
+  var ok=await spotifyApi("PUT", "/me/player/play?device_id="+encodeURIComponent(S.deviceId), { context_uri:album.spotifyUri, offset:{ position: offset||0 } });
+  if(ok===null) toast("Spotify wouldn't start playback — make sure your account is Premium and try again");
+}
+function setLiveUI(){
+  $("modeBadge").textContent="LIVE · SPOTIFY CONNECTED";
+  $("modeBadge").style.background="var(--green)";
+  $("connectBtn").textContent="Spotify ✓ Connected";
+  updateConnectUI();
+}
+function handleSpotifyState(state){
+  if(!state || !state.track_window || !state.track_window.current_track) return;
+  var ct=state.track_window.current_track;
+  S.progress=(state.position||0)/1000;
+  setPlaying(!state.paused);
+  updateProgressUI();
+  if(ct.id && ct.id!==S.lastSpotifyTrackId){
+    S.lastSpotifyTrackId=ct.id;
+    var artists=(ct.artists||[]).map(function(a){ return a.name; }).join(", ");
+    var nextTracks=state.track_window.next_tracks||[];
+    S.liveTrack={
+      t:ct.name, artist:artists, albumTitle:ct.album ? ct.album.name : "",
+      d:Math.round((ct.duration_ms||state.duration||0)/1000),
+      hue:hueFromString(ct.name), init:initialsOf(ct.album ? ct.album.name : ct.name),
+      nextTitle: nextTracks.length ? nextTracks[0].name : ""
+    };
+    // keep the sidebar highlight roughly in sync when the playing track is in the loaded album
+    var a=curAlbum();
+    if(a && a.tracks){ for(var i=0;i<a.tracks.length;i++){ if(a.tracks[i].id===ct.id){ S.track=i; break; } } }
+    renderLiveTab(true);
+    toast("♪ "+ct.name+" — tab swapped automatically");
+  }
+}
+function initSpotifyPlayer(token){
+  if(!window.Spotify || !window.Spotify.Player){ setTimeout(function(){ initSpotifyPlayer(token); }, 600); return; }
+  if(S.spotifyPlayer) return;
+  var player=new window.Spotify.Player({
+    name:"Tab Player",
+    getOAuthToken: async function(cb){ var t=await validSpotifyToken(); if(t) cb(t); },
+    volume:0.8
+  });
+  S.spotifyPlayer=player;
+  player.addListener("ready", function(d){
+    S.deviceId=d.device_id; S.spotifyReady=true;
+    spotifyApi("PUT","/me/player",{ device_ids:[d.device_id], play:false });
+    toast("Spotify connected — this page is now a Spotify Connect device (“Tab Player”)");
+  });
+  player.addListener("not_ready", function(){ S.spotifyReady=false; });
+  player.addListener("player_state_changed", handleSpotifyState);
+  player.addListener("initialization_error", function(e){ console.warn("Spotify init error", e && e.message); });
+  player.addListener("authentication_error", function(e){ console.warn("Spotify auth error", e && e.message); toast("Spotify login expired — reconnect via Connect Spotify"); });
+  player.addListener("account_error", function(e){ console.warn("Spotify account error", e && e.message); toast("In-browser playback needs Spotify Premium"); });
+  player.connect();
+}
+async function enableLiveMode(){
+  var token=await validSpotifyToken();
+  if(!token) return false;
+  S.live=true;
+  setLiveUI();
+  initSpotifyPlayer(token);
+  return true;
+}
+async function handleSpotifyCallback(){
+  var params=new URLSearchParams(window.location.search);
+  var code=params.get("code");
+  var err=params.get("error");
+  // clean the auth params out of the address bar either way
+  if(code || err){ try{ window.history.replaceState({}, document.title, spotifyRedirectUri()); }catch(e){} }
+  if(err){ toast("Spotify login didn't complete ("+err+") — try Connect Spotify again"); return; }
+  if(!code) return;
+  try{
+    await exchangeSpotifyCode(code);
+    toast("Spotify login complete ✓");
+  }catch(e){
+    toast("Spotify login failed at the token step — try Connect Spotify again");
+  }
+}
+
+/* ================= KEYS ================= */
+document.addEventListener("keydown", function(e){
+  if(e.target.tagName==="INPUT" && e.target.type!=="range" && e.target.type!=="checkbox") return;
+  if(e.code==="Space"){ e.preventDefault(); togglePlay(); }
+  if(e.code==="ArrowRight") nextTrack(true);
+  if(e.code==="ArrowLeft") prevTrack();
+  if(e.key==="c" || e.key==="C") setMode(S.mode==="couch"?"desk":"couch");
+  if(e.key==="p" || e.key==="P") setMode(S.mode==="phone"?"desk":"phone");
+});
+
+/* init — start in Phone mode on narrow screens so controls aren't under host chrome */
+(function(){
+  var savedCid=""; try{ savedCid=sessionStorage.getItem(CLIENT_KEY)||""; }catch(e){}
+  if(savedCid && $("clientId")) $("clientId").value=savedCid;
+})();
+renderAlbums();
+renderSession();
+/* My Tabs: restore the settings + cached file list on this device, then
+   auto-sync when a token is saved — unchanged files are skipped by sha. */
+mtLoadSettings();
+renderMyTabsPanel();
+mtLoadCached().then(function(){
+  renderTab(false);
+  if(mtLoadSettings().token) mtSync(false);
+});
+if(window.innerWidth<=700){ setMode("phone"); } else { renderTab(false); }
+/* Spotify: finish a PKCE login round-trip if we're returning from accounts.spotify.com,
+   then go live if a session token is already held. The SDK calls this when it loads;
+   enableLiveMode also polls for the player constructor, so order doesn't matter. */
+window.onSpotifyWebPlaybackSDKReady = function(){ /* player is created in enableLiveMode */ };
+handleSpotifyCallback().then(function(){ return enableLiveMode(); }).then(function(live){
+  if(live) toast("Spotify connected — search by album, artist, track or playlist above and press play");
+});
+</script>
+</body>
+</html>
